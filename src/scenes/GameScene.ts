@@ -1,4 +1,5 @@
 import { Container, Graphics } from 'pixi.js';
+import type { InputManager } from '../core/InputManager';
 import type { Scene } from '../core/SceneManager';
 import { Player } from '../entities/Player';
 
@@ -11,12 +12,19 @@ export class GameScene implements Scene {
 
   private readonly orbits = new Graphics();
   private readonly player = new Player();
+  private unsubscribeInput: (() => void) | null = null;
 
-  public constructor() {
+  private readonly handleAction = (): void => {
+    this.player.switchLane();
+  };
+
+  public constructor(private readonly input: InputManager) {
     this.view.addChild(this.orbits, this.player.view);
   }
 
-  public start(): void {}
+  public start(): void {
+    this.unsubscribeInput = this.input.subscribe(this.handleAction);
+  }
 
   public update(deltaSeconds: number): void {
     this.player.update(deltaSeconds);
@@ -41,6 +49,8 @@ export class GameScene implements Scene {
   }
 
   public destroy(): void {
+    this.unsubscribeInput?.();
+    this.unsubscribeInput = null;
     this.view.destroy({ children: true });
   }
 }
