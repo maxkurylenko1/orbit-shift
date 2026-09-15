@@ -1,7 +1,9 @@
+import type { Collectible } from '../entities/Collectible';
 import type { Obstacle } from '../entities/Obstacle';
 import type { Player } from '../entities/Player';
 
 const COLLISION_ANGLE_THRESHOLD = 0.12;
+const COLLECTIBLE_ANGLE_THRESHOLD = 0.16;
 const TAU = Math.PI * 2;
 const PI = Math.PI;
 
@@ -23,6 +25,28 @@ export class CollisionSystem {
     }
 
     return false;
+  }
+
+  public findCollectibleIndex(
+    player: Player,
+    collectibles: readonly Collectible[],
+  ): number {
+    if (!player.alive) {
+      return -1;
+    }
+
+    for (let index = 0; index < collectibles.length; index += 1) {
+      const collectible = collectibles[index];
+
+      if (
+        collectible.lane === player.lane &&
+        this.angularDistance(player.angle, collectible.angle) < COLLECTIBLE_ANGLE_THRESHOLD
+      ) {
+        return index;
+      }
+    }
+
+    return -1;
   }
 
   private angularDistance(a: number, b: number): number {

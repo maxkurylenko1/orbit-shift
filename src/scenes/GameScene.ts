@@ -1,6 +1,7 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import type { InputManager } from '../core/InputManager';
 import type { Scene } from '../core/SceneManager';
+import { Collectible } from '../entities/Collectible';
 import { Obstacle } from '../entities/Obstacle';
 import { Player, type OrbitLane } from '../entities/Player';
 import { CollisionSystem } from '../systems/CollisionSystem';
@@ -16,14 +17,20 @@ const OUTER_RADIUS_RATIO = 0.31;
 const MAX_OBSTACLES = 8;
 const HUD_PADDING_RATIO = 0.025;
 const MIN_HUD_PADDING = 16;
+const COLLECTIBLE_SPAWN_INTERVAL_SECONDS = 6;
+const COLLECTIBLE_LEAD_ANGLE = 1.35;
+const COLLECTIBLE_SCORE_BONUS = 50;
+const TAU = Math.PI * 2;
 
 export class GameScene implements Scene {
   public readonly view = new Container();
 
   private readonly orbits = new Graphics();
   private readonly obstacleLayer = new Container();
+  private readonly collectibleLayer = new Container();
   private readonly player = new Player();
   private readonly obstacles: Obstacle[] = [];
+  private readonly collectibles: Collectible[] = [];
   private readonly collisionSystem = new CollisionSystem();
   private readonly difficultySystem = new DifficultySystem();
   private readonly scoreSystem = new ScoreSystem();
@@ -44,6 +51,8 @@ export class GameScene implements Scene {
   private viewportHeight = 0;
   private innerRadius = 0;
   private outerRadius = 0;
+  private collectibleSpawnElapsed = 0;
+  private nextCollectibleLane: OrbitLane = 'outer';
   private unsubscribeInput: (() => void) | null = null;
 
   private readonly handleAction = (): void => {
@@ -60,6 +69,7 @@ export class GameScene implements Scene {
     this.view.addChild(
       this.orbits,
       this.obstacleLayer,
+      this.collectibleLayer,
       this.player.view,
       this.scoreText,
       this.timeText,
@@ -88,15 +98,20 @@ export class GameScene implements Scene {
       this.difficultySystem.spawnIntervalSeconds,
       this.player.angularSpeed,
     );
-    this.updateHud();
 
     if (this.collisionSystem.hasPlayerCollision(this.player, this.obstacles)) {
       this.player.alive = false;
+      this.updateHud();
       this.gameOverOverlay.show(
         this.scoreSystem.score,
         this.scoreSystem.elapsedSeconds,
       );
+      return;
     }
+
+    this.updateCollectibleSpawn(deltaSeconds);
+    this.collectTouchedShard();
+    this.updateHud();
   }
 
   public resize(width: number, height: number): void {
@@ -128,20 +143,28 @@ export class GameScene implements Scene {
     for (const obstacle of this.obstacles) {
       obstacle.resize(width, height, innerRadius, outerRadius);
     }
+
+    for (const collectible of this.collectibles) {
+      collectible.resize(width, height, innerRadius, outerRadius);
+    }
   }
 
   public destroy(): void {
     this.unsubscribeInput?.();
     this.unsubscribeInput = null;
     this.clearObstacles();
+    this.clearCollectibles();
     this.view.destroy({ children: true });
   }
 
   private restartRun(): void {
     this.clearObstacles();
+    this.clearCollectibles();
     this.spawnSystem.reset();
     this.scoreSystem.reset();
     this.difficultySystem.reset();
+    this.collectibleSpawnElapsed = 0;
+    this.nextCollectibleLane = 'outer';
     this.player.reset();
     this.player.angularSpeed = this.difficultySystem.playerAngularSpeed;
     this.gameOverOverlay.hide();
@@ -153,6 +176,46 @@ export class GameScene implements Scene {
     this.timeText.text = `${this.scoreSystem.elapsedSeconds.toFixed(1)}s`;
   }
 
+  private updateCollectibleSpawn(deltaSeconds: number): void {
+    this.collectibleSpawnElapsed += deltaSeconds;
+
+    if (this.collectibleSpawnElapsed < COLLECTIBLE_SPAWN_INTERVAL_SECONDS) {
+      return;
+    }
+
+    this.collectibleSpawnElapsed %= COLLECTIBLE_SPAWN_INTERVAL_SECONDS;
+    this.clearCollectibles();
+
+    const angle = (this.player.angle + COLLECTIBLE_LEAD_ANGLE) % TAU;
+    const collectible = new Collectible(this.nextCollectibleLane, angle);
+    collectible.resize(
+      this.viewportWidth,
+      this.viewportHeight,
+      this.innerRadius,
+      this.outerRadius,
+    );
+
+    this.collectibles.push(collectible);
+    this.collectibleLayer.addChild(collectible.view);
+    this.nextCollectibleLane = this.nextCollectibleLane === 'outer' ? 'inner' : 'outer';
+  }
+
+  private collectTouchedShard(): void {
+    const index = this.collisionSystem.findCollectibleIndex(
+      this.player,
+      this.collectibles,
+    );
+
+    if (index < 0) {
+      return;
+    }
+
+    const [collectible] = this.collectibles.splice(index, 1);
+    this.collectibleLayer.removeChild(collectible.view);
+    collectible.destroy();
+    this.scoreSystem.addPoints(COLLECTIBLE_SCORE_BONUS);
+  }
+
   private clearObstacles(): void {
     for (const obstacle of this.obstacles) {
       this.obstacleLayer.removeChild(obstacle.view);
@@ -160,6 +223,15 @@ export class GameScene implements Scene {
     }
 
     this.obstacles.length = 0;
+  }
+
+  private clearCollectibles(): void {
+    for (const collectible of this.collectibles) {
+      this.collectibleLayer.removeChild(collectible.view);
+      collectible.destroy();
+    }
+
+    this.collectibles.length = 0;
   }
 
   private spawnObstacle(lane: OrbitLane, angle: number): void {
