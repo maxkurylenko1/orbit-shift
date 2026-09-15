@@ -3,6 +3,7 @@ import type { InputManager } from '../core/InputManager';
 import type { Scene } from '../core/SceneManager';
 import { Obstacle } from '../entities/Obstacle';
 import { Player, type OrbitLane } from '../entities/Player';
+import { CollisionSystem } from '../systems/CollisionSystem';
 import { SpawnSystem } from '../systems/SpawnSystem';
 
 const ORBIT_COLOR = 0x2bc7d9;
@@ -17,6 +18,7 @@ export class GameScene implements Scene {
   private readonly obstacleLayer = new Container();
   private readonly player = new Player();
   private readonly obstacles: Obstacle[] = [];
+  private readonly collisionSystem = new CollisionSystem();
   private readonly spawnSystem = new SpawnSystem((lane, angle) => {
     this.spawnObstacle(lane, angle);
   });
@@ -41,8 +43,16 @@ export class GameScene implements Scene {
   }
 
   public update(deltaSeconds: number): void {
+    if (!this.player.alive) {
+      return;
+    }
+
     this.player.update(deltaSeconds);
     this.spawnSystem.update(deltaSeconds, this.player.angle);
+
+    if (this.collisionSystem.hasPlayerCollision(this.player, this.obstacles)) {
+      this.player.alive = false;
+    }
   }
 
   public resize(width: number, height: number): void {
