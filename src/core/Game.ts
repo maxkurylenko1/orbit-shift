@@ -1,6 +1,7 @@
 import { Application, type Ticker } from 'pixi.js';
 import { BootScene } from '../scenes/BootScene';
 import { GameScene } from '../scenes/GameScene';
+import { MenuScene } from '../scenes/MenuScene';
 import { InputManager } from './InputManager';
 import { SceneManager } from './SceneManager';
 
@@ -55,8 +56,20 @@ export class Game {
       );
     };
 
+    const showMenuScene = (): void => {
+      if (!this.inputManager) {
+        return;
+      }
+
+      this.sceneManager?.changeScene(
+        new MenuScene(this.inputManager, showGameScene),
+        this.app.screen.width,
+        this.app.screen.height,
+      );
+    };
+
     this.sceneManager.changeScene(
-      new BootScene(showGameScene),
+      new BootScene(showMenuScene),
       this.app.screen.width,
       this.app.screen.height,
     );
