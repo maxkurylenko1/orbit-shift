@@ -6,6 +6,7 @@ import { Obstacle } from '../entities/Obstacle';
 import { Player, type OrbitLane } from '../entities/Player';
 import { CollisionSystem } from '../systems/CollisionSystem';
 import { ComboSystem } from '../systems/ComboSystem';
+import { CountdownSystem } from '../systems/CountdownSystem';
 import { DifficultySystem } from '../systems/DifficultySystem';
 import {
   advanceObstacleTravelBudget,
@@ -38,6 +39,7 @@ export class GameScene implements Scene {
   private readonly collectibles: Collectible[] = [];
   private readonly collisionSystem = new CollisionSystem();
   private readonly comboSystem = new ComboSystem();
+  private readonly countdownSystem = new CountdownSystem();
   private readonly difficultySystem = new DifficultySystem();
   private readonly scoreSystem = new ScoreSystem();
   private readonly spawnSystem = new SpawnSystem((lane, angle) => {
@@ -55,6 +57,10 @@ export class GameScene implements Scene {
     text: '0.0s',
     style: { fill: HUD_COLOR, fontFamily: 'Arial', fontSize: 18, fontWeight: '600' },
   });
+  private readonly countdownText = new Text({
+    text: '3',
+    style: { fill: HUD_COLOR, fontFamily: 'Arial', fontSize: 64, fontWeight: '700' },
+  });
   private readonly gameOverOverlay = new GameOverOverlay();
 
   private viewportWidth = 0;
@@ -67,6 +73,10 @@ export class GameScene implements Scene {
 
   private readonly handleAction = (): void => {
     if (this.player.alive) {
+      if (!this.countdownSystem.finished) {
+        return;
+      }
+
       this.player.switchLane();
       return;
     }
@@ -77,6 +87,7 @@ export class GameScene implements Scene {
   public constructor(private readonly input: InputManager) {
     this.comboText.anchor.set(0.5, 0);
     this.timeText.anchor.set(1, 0);
+    this.countdownText.anchor.set(0.5);
     this.view.addChild(
       this.orbits,
       this.obstacleLayer,
@@ -85,6 +96,7 @@ export class GameScene implements Scene {
       this.scoreText,
       this.comboText,
       this.timeText,
+      this.countdownText,
       this.gameOverOverlay.view,
     );
   }
@@ -96,6 +108,13 @@ export class GameScene implements Scene {
 
   public update(deltaSeconds: number): void {
     if (!this.player.alive) {
+      return;
+    }
+
+    if (!this.countdownSystem.finished) {
+      this.countdownSystem.update(deltaSeconds);
+      this.countdownText.text = this.countdownSystem.label;
+      this.countdownText.visible = !this.countdownSystem.finished;
       return;
     }
 
@@ -152,6 +171,8 @@ export class GameScene implements Scene {
     this.scoreText.position.set(hudPadding, hudPadding);
     this.comboText.position.set(width * 0.5, hudPadding);
     this.timeText.position.set(width - hudPadding, hudPadding);
+    this.countdownText.style.fontSize = Math.max(48, base * 0.1);
+    this.countdownText.position.set(centerX, centerY);
     this.gameOverOverlay.resize(width, height);
 
     for (const obstacle of this.obstacles) {
@@ -177,11 +198,14 @@ export class GameScene implements Scene {
     this.spawnSystem.reset();
     this.scoreSystem.reset();
     this.comboSystem.resetChain();
+    this.countdownSystem.reset();
     this.difficultySystem.reset();
     this.collectibleSpawnElapsed = 0;
     this.nextCollectibleLane = 'outer';
     this.player.reset();
     this.player.angularSpeed = this.difficultySystem.playerAngularSpeed;
+    this.countdownText.text = this.countdownSystem.label;
+    this.countdownText.visible = true;
     this.gameOverOverlay.hide();
     this.updateHud();
   }
