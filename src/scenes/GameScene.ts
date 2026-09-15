@@ -5,6 +5,7 @@ import { Collectible } from '../entities/Collectible';
 import { Obstacle } from '../entities/Obstacle';
 import { Player, type OrbitLane } from '../entities/Player';
 import { CollisionSystem } from '../systems/CollisionSystem';
+import { ComboSystem } from '../systems/ComboSystem';
 import { DifficultySystem } from '../systems/DifficultySystem';
 import { ScoreSystem } from '../systems/ScoreSystem';
 import { SpawnSystem } from '../systems/SpawnSystem';
@@ -32,6 +33,7 @@ export class GameScene implements Scene {
   private readonly obstacles: Obstacle[] = [];
   private readonly collectibles: Collectible[] = [];
   private readonly collisionSystem = new CollisionSystem();
+  private readonly comboSystem = new ComboSystem();
   private readonly difficultySystem = new DifficultySystem();
   private readonly scoreSystem = new ScoreSystem();
   private readonly spawnSystem = new SpawnSystem((lane, angle) => {
@@ -39,6 +41,10 @@ export class GameScene implements Scene {
   });
   private readonly scoreText = new Text({
     text: 'SCORE 0',
+    style: { fill: HUD_COLOR, fontFamily: 'Arial', fontSize: 18, fontWeight: '600' },
+  });
+  private readonly comboText = new Text({
+    text: 'COMBO x2',
     style: { fill: HUD_COLOR, fontFamily: 'Arial', fontSize: 18, fontWeight: '600' },
   });
   private readonly timeText = new Text({
@@ -65,6 +71,7 @@ export class GameScene implements Scene {
   };
 
   public constructor(private readonly input: InputManager) {
+    this.comboText.anchor.set(0.5, 0);
     this.timeText.anchor.set(1, 0);
     this.view.addChild(
       this.orbits,
@@ -72,6 +79,7 @@ export class GameScene implements Scene {
       this.collectibleLayer,
       this.player.view,
       this.scoreText,
+      this.comboText,
       this.timeText,
       this.gameOverOverlay.view,
     );
@@ -109,8 +117,8 @@ export class GameScene implements Scene {
       return;
     }
 
-    this.updateCollectibleSpawn(deltaSeconds);
     this.collectTouchedShard();
+    this.updateCollectibleSpawn(deltaSeconds);
     this.updateHud();
   }
 
@@ -137,6 +145,7 @@ export class GameScene implements Scene {
 
     this.player.resize(width, height, innerRadius, outerRadius);
     this.scoreText.position.set(hudPadding, hudPadding);
+    this.comboText.position.set(width * 0.5, hudPadding);
     this.timeText.position.set(width - hudPadding, hudPadding);
     this.gameOverOverlay.resize(width, height);
 
@@ -162,6 +171,7 @@ export class GameScene implements Scene {
     this.clearCollectibles();
     this.spawnSystem.reset();
     this.scoreSystem.reset();
+    this.comboSystem.resetChain();
     this.difficultySystem.reset();
     this.collectibleSpawnElapsed = 0;
     this.nextCollectibleLane = 'outer';
@@ -173,6 +183,8 @@ export class GameScene implements Scene {
 
   private updateHud(): void {
     this.scoreText.text = `SCORE ${this.scoreSystem.score}`;
+    this.comboText.visible = this.comboSystem.streak > 1;
+    this.comboText.text = `COMBO x${this.comboSystem.multiplier}`;
     this.timeText.text = `${this.scoreSystem.elapsedSeconds.toFixed(1)}s`;
   }
 
@@ -184,6 +196,11 @@ export class GameScene implements Scene {
     }
 
     this.collectibleSpawnElapsed %= COLLECTIBLE_SPAWN_INTERVAL_SECONDS;
+
+    if (this.collectibles.length > 0) {
+      this.comboSystem.resetChain();
+    }
+
     this.clearCollectibles();
 
     const angle = (this.player.angle + COLLECTIBLE_LEAD_ANGLE) % TAU;
@@ -213,7 +230,11 @@ export class GameScene implements Scene {
     const [collectible] = this.collectibles.splice(index, 1);
     this.collectibleLayer.removeChild(collectible.view);
     collectible.destroy();
-    this.scoreSystem.addPoints(COLLECTIBLE_SCORE_BONUS);
+
+    this.comboSystem.recordCollect();
+    this.scoreSystem.addPoints(
+      COLLECTIBLE_SCORE_BONUS * this.comboSystem.multiplier,
+    );
   }
 
   private clearObstacles(): void {
