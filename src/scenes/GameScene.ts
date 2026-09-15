@@ -7,6 +7,10 @@ import { Player, type OrbitLane } from '../entities/Player';
 import { CollisionSystem } from '../systems/CollisionSystem';
 import { ComboSystem } from '../systems/ComboSystem';
 import { DifficultySystem } from '../systems/DifficultySystem';
+import {
+  advanceObstacleTravelBudget,
+  createObstacleTravelBudget,
+} from '../systems/obstacleLifetime';
 import { ScoreSystem } from '../systems/ScoreSystem';
 import { SpawnSystem } from '../systems/SpawnSystem';
 import { GameOverOverlay } from '../ui/GameOverOverlay';
@@ -117,6 +121,7 @@ export class GameScene implements Scene {
       return;
     }
 
+    this.updateObstacleLifetimes(deltaSeconds);
     this.collectTouchedShard();
     this.updateCollectibleSpawn(deltaSeconds);
     this.updateHud();
@@ -237,6 +242,25 @@ export class GameScene implements Scene {
     );
   }
 
+  private updateObstacleLifetimes(deltaSeconds: number): void {
+    for (let index = this.obstacles.length - 1; index >= 0; index -= 1) {
+      const obstacle = this.obstacles[index];
+      obstacle.remainingTravelRadians = advanceObstacleTravelBudget(
+        obstacle.remainingTravelRadians,
+        this.player.angularSpeed,
+        deltaSeconds,
+      );
+
+      if (obstacle.remainingTravelRadians > 0) {
+        continue;
+      }
+
+      this.obstacles.splice(index, 1);
+      this.obstacleLayer.removeChild(obstacle.view);
+      obstacle.destroy();
+    }
+  }
+
   private clearObstacles(): void {
     for (const obstacle of this.obstacles) {
       this.obstacleLayer.removeChild(obstacle.view);
@@ -265,7 +289,11 @@ export class GameScene implements Scene {
       }
     }
 
-    const obstacle = new Obstacle(lane, angle);
+    const obstacle = new Obstacle(
+      lane,
+      angle,
+      createObstacleTravelBudget(this.player.angle, angle),
+    );
     obstacle.resize(
       this.viewportWidth,
       this.viewportHeight,

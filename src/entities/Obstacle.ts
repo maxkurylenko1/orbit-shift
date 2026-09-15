@@ -11,6 +11,7 @@ export class Obstacle {
   public constructor(
     public readonly lane: OrbitLane,
     public readonly angle: number,
+    public remainingTravelRadians: number,
   ) {
     this.view.rotation = Math.PI / 4;
   }
