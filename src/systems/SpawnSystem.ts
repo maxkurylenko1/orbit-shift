@@ -23,22 +23,27 @@ export class SpawnSystem {
     playerAngle: number,
     intervalSeconds: number,
   ): void {
-    const spawnInterval = Math.max(MIN_INTERVAL_SECONDS, intervalSeconds);
+    const step = this.patternSystem.currentStep();
+    const baseInterval = Math.max(MIN_INTERVAL_SECONDS, intervalSeconds);
+    const stepInterval = Math.max(
+      MIN_INTERVAL_SECONDS,
+      baseInterval * step.intervalMultiplier,
+    );
+
     this.elapsedSeconds += deltaSeconds;
 
-    if (this.elapsedSeconds < spawnInterval) {
+    if (this.elapsedSeconds < stepInterval) {
       return;
     }
 
-    this.elapsedSeconds %= spawnInterval;
+    this.elapsedSeconds %= stepInterval;
+    this.patternSystem.advance();
 
-    const lane = this.patternSystem.nextStep();
-
-    if (!lane) {
+    if (!step.lane) {
       return;
     }
 
     const spawnAngle = (playerAngle + SPAWN_LEAD_ANGLE) % TAU;
-    this.onSpawnObstacle(lane, spawnAngle);
+    this.onSpawnObstacle(step.lane, spawnAngle);
   }
 }
