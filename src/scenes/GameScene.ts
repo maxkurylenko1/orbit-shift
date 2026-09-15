@@ -4,6 +4,7 @@ import type { Scene } from '../core/SceneManager';
 import { Obstacle } from '../entities/Obstacle';
 import { Player, type OrbitLane } from '../entities/Player';
 import { CollisionSystem } from '../systems/CollisionSystem';
+import { DifficultySystem } from '../systems/DifficultySystem';
 import { ScoreSystem } from '../systems/ScoreSystem';
 import { SpawnSystem } from '../systems/SpawnSystem';
 import { GameOverOverlay } from '../ui/GameOverOverlay';
@@ -24,6 +25,7 @@ export class GameScene implements Scene {
   private readonly player = new Player();
   private readonly obstacles: Obstacle[] = [];
   private readonly collisionSystem = new CollisionSystem();
+  private readonly difficultySystem = new DifficultySystem();
   private readonly scoreSystem = new ScoreSystem();
   private readonly spawnSystem = new SpawnSystem((lane, angle) => {
     this.spawnObstacle(lane, angle);
@@ -75,9 +77,16 @@ export class GameScene implements Scene {
       return;
     }
 
-    this.player.update(deltaSeconds);
-    this.spawnSystem.update(deltaSeconds, this.player.angle);
     this.scoreSystem.update(deltaSeconds);
+    this.difficultySystem.update(this.scoreSystem.elapsedSeconds);
+    this.player.angularSpeed = this.difficultySystem.playerAngularSpeed;
+
+    this.player.update(deltaSeconds);
+    this.spawnSystem.update(
+      deltaSeconds,
+      this.player.angle,
+      this.difficultySystem.spawnIntervalSeconds,
+    );
     this.updateHud();
 
     if (this.collisionSystem.hasPlayerCollision(this.player, this.obstacles)) {
@@ -131,7 +140,9 @@ export class GameScene implements Scene {
     this.clearObstacles();
     this.spawnSystem.reset();
     this.scoreSystem.reset();
+    this.difficultySystem.reset();
     this.player.reset();
+    this.player.angularSpeed = this.difficultySystem.playerAngularSpeed;
     this.gameOverOverlay.hide();
     this.updateHud();
   }
