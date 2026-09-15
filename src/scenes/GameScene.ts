@@ -6,6 +6,7 @@ import { Player, type OrbitLane } from '../entities/Player';
 import { CollisionSystem } from '../systems/CollisionSystem';
 import { ScoreSystem } from '../systems/ScoreSystem';
 import { SpawnSystem } from '../systems/SpawnSystem';
+import { GameOverOverlay } from '../ui/GameOverOverlay';
 
 const ORBIT_COLOR = 0x2bc7d9;
 const HUD_COLOR = 0xe8f7ff;
@@ -35,6 +36,7 @@ export class GameScene implements Scene {
     text: '0.0s',
     style: { fill: HUD_COLOR, fontFamily: 'Arial', fontSize: 18, fontWeight: '600' },
   });
+  private readonly gameOverOverlay = new GameOverOverlay();
 
   private viewportWidth = 0;
   private viewportHeight = 0;
@@ -59,6 +61,7 @@ export class GameScene implements Scene {
       this.player.view,
       this.scoreText,
       this.timeText,
+      this.gameOverOverlay.view,
     );
   }
 
@@ -79,6 +82,10 @@ export class GameScene implements Scene {
 
     if (this.collisionSystem.hasPlayerCollision(this.player, this.obstacles)) {
       this.player.alive = false;
+      this.gameOverOverlay.show(
+        this.scoreSystem.score,
+        this.scoreSystem.elapsedSeconds,
+      );
     }
   }
 
@@ -106,6 +113,7 @@ export class GameScene implements Scene {
     this.player.resize(width, height, innerRadius, outerRadius);
     this.scoreText.position.set(hudPadding, hudPadding);
     this.timeText.position.set(width - hudPadding, hudPadding);
+    this.gameOverOverlay.resize(width, height);
 
     for (const obstacle of this.obstacles) {
       obstacle.resize(width, height, innerRadius, outerRadius);
@@ -124,6 +132,7 @@ export class GameScene implements Scene {
     this.spawnSystem.reset();
     this.scoreSystem.reset();
     this.player.reset();
+    this.gameOverOverlay.hide();
     this.updateHud();
   }
 
