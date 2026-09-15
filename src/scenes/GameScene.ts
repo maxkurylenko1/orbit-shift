@@ -30,7 +30,12 @@ export class GameScene implements Scene {
   private unsubscribeInput: (() => void) | null = null;
 
   private readonly handleAction = (): void => {
-    this.player.switchLane();
+    if (this.player.alive) {
+      this.player.switchLane();
+      return;
+    }
+
+    this.restartRun();
   };
 
   public constructor(private readonly input: InputManager) {
@@ -38,7 +43,7 @@ export class GameScene implements Scene {
   }
 
   public start(): void {
-    this.spawnSystem.reset();
+    this.restartRun();
     this.unsubscribeInput = this.input.subscribe(this.handleAction);
   }
 
@@ -85,8 +90,23 @@ export class GameScene implements Scene {
   public destroy(): void {
     this.unsubscribeInput?.();
     this.unsubscribeInput = null;
-    this.obstacles.length = 0;
+    this.clearObstacles();
     this.view.destroy({ children: true });
+  }
+
+  private restartRun(): void {
+    this.clearObstacles();
+    this.spawnSystem.reset();
+    this.player.reset();
+  }
+
+  private clearObstacles(): void {
+    for (const obstacle of this.obstacles) {
+      this.obstacleLayer.removeChild(obstacle.view);
+      obstacle.destroy();
+    }
+
+    this.obstacles.length = 0;
   }
 
   private spawnObstacle(lane: OrbitLane, angle: number): void {

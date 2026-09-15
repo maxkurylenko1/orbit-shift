@@ -6,6 +6,8 @@ const PLAYER_COLOR = 0x42e8ff;
 const PLAYER_RADIUS_RATIO = 0.018;
 const MIN_PLAYER_RADIUS = 5;
 const LANE_SWITCH_DURATION = 0.14;
+const INITIAL_LANE: OrbitLane = 'outer';
+const INITIAL_ANGLE = -Math.PI / 2;
 const TAU = Math.PI * 2;
 
 const easeInOutQuad = (t: number): number =>
@@ -14,12 +16,12 @@ const easeInOutQuad = (t: number): number =>
 export class Player {
   public readonly view = new Graphics();
 
-  public lane: OrbitLane = 'outer';
-  public angle = -Math.PI / 2;
+  public lane: OrbitLane = INITIAL_LANE;
+  public angle = INITIAL_ANGLE;
   public angularSpeed = 1.2;
   public alive = true;
-  public transitionFromLane: OrbitLane = 'outer';
-  public transitionToLane: OrbitLane = 'outer';
+  public transitionFromLane: OrbitLane = INITIAL_LANE;
+  public transitionToLane: OrbitLane = INITIAL_LANE;
   public transitionProgress = 1;
 
   private centerX = 0;
@@ -61,6 +63,16 @@ export class Player {
     this.transitionFromLane = this.lane;
     this.transitionToLane = this.lane === 'outer' ? 'inner' : 'outer';
     this.transitionProgress = 0;
+  }
+
+  public reset(): void {
+    this.lane = INITIAL_LANE;
+    this.angle = INITIAL_ANGLE;
+    this.alive = true;
+    this.transitionFromLane = INITIAL_LANE;
+    this.transitionToLane = INITIAL_LANE;
+    this.transitionProgress = 1;
+    this.updatePosition();
   }
 
   public resize(
