@@ -5,7 +5,11 @@ export type OrbitLane = 'inner' | 'outer';
 const PLAYER_COLOR = 0x42e8ff;
 const PLAYER_RADIUS_RATIO = 0.018;
 const MIN_PLAYER_RADIUS = 5;
+const LANE_SWITCH_DURATION = 0.14;
 const TAU = Math.PI * 2;
+
+const easeInOutQuad = (t: number): number =>
+  t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
 export class Player {
   public readonly view = new Graphics();
@@ -14,6 +18,9 @@ export class Player {
   public angle = -Math.PI / 2;
   public angularSpeed = 1.2;
   public alive = true;
+  public transitionFromLane: OrbitLane = 'outer';
+  public transitionToLane: OrbitLane = 'outer';
+  public transitionProgress = 1;
 
   private centerX = 0;
   private centerY = 0;
@@ -31,7 +38,29 @@ export class Player {
       this.angle %= TAU;
     }
 
+    if (this.transitionProgress < 1) {
+      this.transitionProgress = Math.min(
+        1,
+        this.transitionProgress + deltaSeconds / LANE_SWITCH_DURATION,
+      );
+
+      if (this.transitionProgress === 1) {
+        this.lane = this.transitionToLane;
+        this.transitionFromLane = this.lane;
+      }
+    }
+
     this.updatePosition();
+  }
+
+  public switchLane(): void {
+    if (!this.alive || this.transitionProgress < 1) {
+      return;
+    }
+
+    this.transitionFromLane = this.lane;
+    this.transitionToLane = this.lane === 'outer' ? 'inner' : 'outer';
+    this.transitionProgress = 0;
   }
 
   public resize(
@@ -53,11 +82,18 @@ export class Player {
   }
 
   private updatePosition(): void {
-    const radius = this.lane === 'inner' ? this.innerRadius : this.outerRadius;
+    const fromRadius = this.getLaneRadius(this.transitionFromLane);
+    const toRadius = this.getLaneRadius(this.transitionToLane);
+    const easedProgress = easeInOutQuad(this.transitionProgress);
+    const radius = fromRadius + (toRadius - fromRadius) * easedProgress;
 
     this.view.position.set(
       this.centerX + Math.cos(this.angle) * radius,
       this.centerY + Math.sin(this.angle) * radius,
     );
+  }
+
+  private getLaneRadius(lane: OrbitLane): number {
+    return lane === 'inner' ? this.innerRadius : this.outerRadius;
   }
 }
