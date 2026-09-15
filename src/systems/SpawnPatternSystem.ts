@@ -26,13 +26,22 @@ const PATTERNS: readonly (readonly SpawnStep[])[] = [
   ],
 ];
 
+export const SPAWN_PATTERN_COUNT = PATTERNS.length;
+
 export class SpawnPatternSystem {
   private patternIndex = 0;
   private stepIndex = 0;
 
-  public reset(): void {
-    this.patternIndex = 0;
-    this.stepIndex = 0;
+  public reset(patternIndex = 0, phaseRatio = 0): void {
+    const safePatternIndex = Math.min(
+      PATTERNS.length - 1,
+      Math.max(0, Math.floor(patternIndex)),
+    );
+    const pattern = PATTERNS[safePatternIndex];
+    const safePhaseRatio = Math.min(0.999999, Math.max(0, phaseRatio));
+
+    this.patternIndex = safePatternIndex;
+    this.stepIndex = Math.floor(safePhaseRatio * pattern.length);
   }
 
   public currentStep(): SpawnStep {

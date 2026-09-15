@@ -1,6 +1,7 @@
 import type { OrbitLane } from '../entities/Player';
 import { getSafeSpawnInterval } from './spawnSafety';
-import { SpawnPatternSystem } from './SpawnPatternSystem';
+import { createSpawnRunVariation } from './spawnVariation';
+import { SPAWN_PATTERN_COUNT, SpawnPatternSystem } from './SpawnPatternSystem';
 
 const SPAWN_LEAD_ANGLE = 2.25;
 const MIN_INTERVAL_SECONDS = 0.1;
@@ -11,12 +12,16 @@ export type SpawnObstacleHandler = (lane: OrbitLane, angle: number) => void;
 export class SpawnSystem {
   private readonly patternSystem = new SpawnPatternSystem();
   private elapsedSeconds = 0;
+  private runLeadAngle = SPAWN_LEAD_ANGLE;
 
   public constructor(private readonly onSpawnObstacle: SpawnObstacleHandler) {}
 
   public reset(): void {
+    const variation = createSpawnRunVariation(SPAWN_PATTERN_COUNT);
+
     this.elapsedSeconds = 0;
-    this.patternSystem.reset();
+    this.runLeadAngle = SPAWN_LEAD_ANGLE + variation.leadAngleOffset;
+    this.patternSystem.reset(variation.patternIndex, variation.phaseRatio);
   }
 
   public update(
@@ -46,7 +51,7 @@ export class SpawnSystem {
       return;
     }
 
-    const spawnAngle = (playerAngle + SPAWN_LEAD_ANGLE) % TAU;
+    const spawnAngle = (playerAngle + this.runLeadAngle) % TAU;
     this.onSpawnObstacle(step.lane, spawnAngle);
   }
 }
