@@ -4,6 +4,7 @@ import type { Scene } from '../core/SceneManager';
 import { Collectible } from '../entities/Collectible';
 import { Obstacle } from '../entities/Obstacle';
 import { Player, type OrbitLane } from '../entities/Player';
+import { BestScoreStore } from '../systems/BestScoreStore';
 import { CollisionSystem } from '../systems/CollisionSystem';
 import { ComboSystem } from '../systems/ComboSystem';
 import { CountdownSystem } from '../systems/CountdownSystem';
@@ -18,6 +19,7 @@ import { GameOverOverlay } from '../ui/GameOverOverlay';
 
 const ORBIT_COLOR = 0x2bc7d9;
 const HUD_COLOR = 0xe8f7ff;
+const MUTED_HUD_COLOR = 0x86a3b8;
 const INNER_RADIUS_RATIO = 0.2;
 const OUTER_RADIUS_RATIO = 0.31;
 const MAX_OBSTACLES = 8;
@@ -37,6 +39,7 @@ export class GameScene implements Scene {
   private readonly player = new Player();
   private readonly obstacles: Obstacle[] = [];
   private readonly collectibles: Collectible[] = [];
+  private readonly bestScoreStore = new BestScoreStore(window.localStorage);
   private readonly collisionSystem = new CollisionSystem();
   private readonly comboSystem = new ComboSystem();
   private readonly countdownSystem = new CountdownSystem();
@@ -48,6 +51,10 @@ export class GameScene implements Scene {
   private readonly scoreText = new Text({
     text: 'SCORE 0',
     style: { fill: HUD_COLOR, fontFamily: 'Arial', fontSize: 18, fontWeight: '600' },
+  });
+  private readonly bestText = new Text({
+    text: 'BEST 0',
+    style: { fill: MUTED_HUD_COLOR, fontFamily: 'Arial', fontSize: 15, fontWeight: '500' },
   });
   private readonly comboText = new Text({
     text: 'COMBO x2',
@@ -69,6 +76,7 @@ export class GameScene implements Scene {
   private outerRadius = 0;
   private collectibleSpawnElapsed = 0;
   private nextCollectibleLane: OrbitLane = 'outer';
+  private bestScore = 0;
   private unsubscribeInput: (() => void) | null = null;
 
   private readonly handleAction = (): void => {
@@ -94,6 +102,7 @@ export class GameScene implements Scene {
       this.collectibleLayer,
       this.player.view,
       this.scoreText,
+      this.bestText,
       this.comboText,
       this.timeText,
       this.countdownText,
@@ -102,6 +111,7 @@ export class GameScene implements Scene {
   }
 
   public start(): void {
+    this.bestScore = this.bestScoreStore.load();
     this.restartRun();
     this.unsubscribeInput = this.input.subscribe(this.handleAction);
   }
@@ -132,9 +142,11 @@ export class GameScene implements Scene {
 
     if (this.collisionSystem.hasPlayerCollision(this.player, this.obstacles)) {
       this.player.alive = false;
+      this.bestScore = this.bestScoreStore.submit(this.scoreSystem.score);
       this.updateHud();
       this.gameOverOverlay.show(
         this.scoreSystem.score,
+        this.bestScore,
         this.scoreSystem.elapsedSeconds,
       );
       return;
@@ -169,6 +181,7 @@ export class GameScene implements Scene {
 
     this.player.resize(width, height, innerRadius, outerRadius);
     this.scoreText.position.set(hudPadding, hudPadding);
+    this.bestText.position.set(hudPadding, hudPadding + Math.max(20, base * 0.028));
     this.comboText.position.set(width * 0.5, hudPadding);
     this.timeText.position.set(width - hudPadding, hudPadding);
     this.countdownText.style.fontSize = Math.max(48, base * 0.1);
@@ -212,6 +225,7 @@ export class GameScene implements Scene {
 
   private updateHud(): void {
     this.scoreText.text = `SCORE ${this.scoreSystem.score}`;
+    this.bestText.text = `BEST ${Math.max(this.bestScore, this.scoreSystem.score)}`;
     this.comboText.visible = this.comboSystem.streak > 1;
     this.comboText.text = `COMBO x${this.comboSystem.multiplier}`;
     this.timeText.text = `${this.scoreSystem.elapsedSeconds.toFixed(1)}s`;

@@ -18,21 +18,27 @@ export class GameOverOverlay {
     text: 'SCORE 0 · 0.0s',
     style: { fill: ACCENT_COLOR, fontFamily: 'Arial', fontSize: 20, fontWeight: '600' },
   });
+  private readonly best = new Text({
+    text: 'BEST 0',
+    style: { fill: MUTED_COLOR, fontFamily: 'Arial', fontSize: 17, fontWeight: '500' },
+  });
   private readonly hint = new Text({
-    text: 'Tap / Space to restart',
+    text: 'PLAY AGAIN · Tap / Space',
     style: { fill: MUTED_COLOR, fontFamily: 'Arial', fontSize: 16, fontWeight: '500' },
   });
 
   public constructor() {
     this.title.anchor.set(0.5);
     this.result.anchor.set(0.5);
+    this.best.anchor.set(0.5);
     this.hint.anchor.set(0.5);
-    this.view.addChild(this.dimmer, this.title, this.result, this.hint);
+    this.view.addChild(this.dimmer, this.title, this.result, this.best, this.hint);
     this.hide();
   }
 
-  public show(score: number, elapsedSeconds: number): void {
+  public show(score: number, bestScore: number, elapsedSeconds: number): void {
     this.result.text = `SCORE ${score} · ${elapsedSeconds.toFixed(1)}s`;
+    this.best.text = `BEST ${bestScore}`;
     this.view.visible = true;
   }
 
@@ -52,10 +58,12 @@ export class GameOverOverlay {
 
     this.title.style.fontSize = Math.max(30, base * 0.065);
     this.result.style.fontSize = Math.max(17, base * 0.03);
+    this.best.style.fontSize = Math.max(15, base * 0.025);
     this.hint.style.fontSize = Math.max(14, base * 0.022);
 
-    this.title.position.set(centerX, centerY - base * 0.07);
-    this.result.position.set(centerX, centerY + base * 0.01);
-    this.hint.position.set(centerX, centerY + base * 0.08);
+    this.title.position.set(centerX, centerY - base * 0.09);
+    this.result.position.set(centerX, centerY - base * 0.005);
+    this.best.position.set(centerX, centerY + base * 0.04);
+    this.hint.position.set(centerX, centerY + base * 0.11);
   }
 }
