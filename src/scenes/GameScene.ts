@@ -86,6 +86,7 @@ export class GameScene implements Scene {
       deltaSeconds,
       this.player.angle,
       this.difficultySystem.spawnIntervalSeconds,
+      this.player.angularSpeed,
     );
     this.updateHud();
 

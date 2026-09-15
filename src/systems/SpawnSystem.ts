@@ -1,4 +1,5 @@
 import type { OrbitLane } from '../entities/Player';
+import { getSafeSpawnInterval } from './spawnSafety';
 import { SpawnPatternSystem } from './SpawnPatternSystem';
 
 const SPAWN_LEAD_ANGLE = 2.25;
@@ -22,12 +23,14 @@ export class SpawnSystem {
     deltaSeconds: number,
     playerAngle: number,
     intervalSeconds: number,
+    playerAngularSpeed: number,
   ): void {
     const step = this.patternSystem.currentStep();
     const baseInterval = Math.max(MIN_INTERVAL_SECONDS, intervalSeconds);
-    const stepInterval = Math.max(
-      MIN_INTERVAL_SECONDS,
-      baseInterval * step.intervalMultiplier,
+    const stepInterval = getSafeSpawnInterval(
+      baseInterval,
+      step.intervalMultiplier,
+      playerAngularSpeed,
     );
 
     this.elapsedSeconds += deltaSeconds;
