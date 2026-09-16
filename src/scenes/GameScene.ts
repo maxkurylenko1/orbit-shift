@@ -6,6 +6,7 @@ import type { Scene } from '../core/SceneManager';
 import { Collectible } from '../entities/Collectible';
 import { Obstacle } from '../entities/Obstacle';
 import { Player, type OrbitLane } from '../entities/Player';
+import { getOrbitVisuals } from '../presentation/orbitVisual';
 import {
   calculateReactorPulseAlpha,
   createReactorGlowRings,
@@ -25,6 +26,7 @@ import { GameOverOverlay } from '../ui/GameOverOverlay';
 
 const REACTOR_ASSET_URL = 'assets/reactor.webp';
 const ORBIT_COLOR = 0x2bc7d9;
+const ORBIT_CORE_COLOR = 0x63efff;
 const HUD_COLOR = 0xe8f7ff;
 const MUTED_HUD_COLOR = 0x86a3b8;
 const INNER_RADIUS_RATIO = 0.2;
@@ -183,7 +185,7 @@ export class GameScene implements Scene {
     const centerY = height * 0.5;
     const innerRadius = base * INNER_RADIUS_RATIO;
     const outerRadius = base * OUTER_RADIUS_RATIO;
-    const lineWidth = Math.max(1, base * 0.003);
+    const orbitVisuals = getOrbitVisuals(base);
     const hudPadding = Math.max(MIN_HUD_PADDING, base * HUD_PADDING_RATIO);
     const { reactor: reactorSize } = calculateVisualSizes(base);
 
@@ -208,13 +210,46 @@ export class GameScene implements Scene {
     this.orbits
       .clear()
       .circle(centerX, centerY, innerRadius)
-      .stroke({ color: ORBIT_COLOR, alpha: 0.08, width: lineWidth * 5 })
+      .stroke({
+        color: ORBIT_COLOR,
+        alpha: 0.12,
+        width: orbitVisuals.gameplayGlowWidth,
+      })
       .circle(centerX, centerY, innerRadius)
-      .stroke({ color: ORBIT_COLOR, alpha: 0.48, width: lineWidth })
+      .stroke({
+        color: ORBIT_CORE_COLOR,
+        alpha: orbitVisuals.innerAlpha,
+        width: orbitVisuals.gameplayCoreWidth,
+      })
       .circle(centerX, centerY, outerRadius)
-      .stroke({ color: ORBIT_COLOR, alpha: 0.05, width: lineWidth * 4 })
+      .stroke({
+        color: ORBIT_COLOR,
+        alpha: 0.1,
+        width: orbitVisuals.gameplayGlowWidth,
+      })
       .circle(centerX, centerY, outerRadius)
-      .stroke({ color: ORBIT_COLOR, alpha: 0.28, width: lineWidth });
+      .stroke({
+        color: ORBIT_CORE_COLOR,
+        alpha: orbitVisuals.outerAlpha,
+        width: orbitVisuals.gameplayCoreWidth,
+      })
+      .circle(centerX, centerY, orbitVisuals.decorativeRadius)
+      .stroke({
+        color: ORBIT_COLOR,
+        alpha: orbitVisuals.decorativeAlpha,
+        width: orbitVisuals.decorativeWidth,
+      });
+
+    const markerRadius = Math.max(1.3, base * 0.0022);
+    for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+      this.orbits
+        .circle(
+          centerX + Math.cos(angle) * orbitVisuals.decorativeRadius,
+          centerY + Math.sin(angle) * orbitVisuals.decorativeRadius,
+          markerRadius,
+        )
+        .fill({ color: ORBIT_CORE_COLOR, alpha: 0.22 });
+    }
 
     this.player.resize(width, height, innerRadius, outerRadius);
     this.scoreText.position.set(hudPadding, hudPadding);
