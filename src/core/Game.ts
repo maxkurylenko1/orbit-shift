@@ -1,4 +1,4 @@
-import { Application, type Ticker } from 'pixi.js';
+import { Application, Assets, type Ticker } from 'pixi.js';
 import { BootScene } from '../scenes/BootScene';
 import { GameScene } from '../scenes/GameScene';
 import { MenuScene } from '../scenes/MenuScene';
@@ -7,6 +7,7 @@ import { SceneManager } from './SceneManager';
 
 const BACKGROUND_COLOR = 0x050816;
 const MAX_DEVICE_PIXEL_RATIO = 2;
+const VISUAL_ASSETS = ['assets/player.webp', 'assets/reactor.webp'] as const;
 
 export class Game {
   private readonly app = new Application();
@@ -34,6 +35,8 @@ export class Game {
       resolution: Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO),
       resizeTo: host,
     });
+
+    await Assets.load([...VISUAL_ASSETS]);
 
     this.app.canvas.classList.add('game-canvas');
     host.appendChild(this.app.canvas);
