@@ -7,7 +7,12 @@ import { SceneManager } from './SceneManager';
 
 const BACKGROUND_COLOR = 0x050816;
 const MAX_DEVICE_PIXEL_RATIO = 2;
-const VISUAL_ASSETS = ['assets/player.webp', 'assets/reactor.webp'] as const;
+const VISUAL_ASSETS = [
+  'assets/player.webp',
+  'assets/reactor.webp',
+  'assets/space-edge-left.webp',
+  'assets/space-edge-right.webp',
+] as const;
 
 export class Game {
   private readonly app = new Application();

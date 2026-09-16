@@ -1,4 +1,5 @@
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Sprite } from 'pixi.js';
+import { getEdgePlateLayout } from './edgePlates';
 import { createSpaceField, getBackgroundMetrics } from './spaceField';
 
 const BASE_COLOR = 0x02050d;
@@ -13,6 +14,7 @@ const ASTEROID_HIGHLIGHT = 0x1f5a75;
 const ASTEROID_CRATER = 0x010309;
 const VIGNETTE_COLOR = 0x01030a;
 const FIELD_SEED = 0x0b17;
+const EDGE_ALPHA = 0.94;
 
 export class SpaceBackground {
   public readonly view = new Container();
@@ -22,15 +24,22 @@ export class SpaceBackground {
   private readonly starLayer = new Graphics();
   private readonly galaxyLayer = new Graphics();
   private readonly asteroidLayer = new Graphics();
+  private readonly leftEdge = Sprite.from('assets/space-edge-left.webp');
+  private readonly rightEdge = Sprite.from('assets/space-edge-right.webp');
   private readonly vignetteLayer = new Graphics();
 
   public constructor() {
+    this.leftEdge.alpha = EDGE_ALPHA;
+    this.rightEdge.alpha = EDGE_ALPHA;
+
     this.view.addChild(
       this.baseLayer,
       this.nebulaLayer,
       this.starLayer,
       this.galaxyLayer,
       this.asteroidLayer,
+      this.leftEdge,
+      this.rightEdge,
       this.vignetteLayer,
     );
   }
@@ -40,6 +49,7 @@ export class SpaceBackground {
     const safeHeight = Math.max(1, height);
     const layout = createSpaceField(safeWidth, safeHeight, FIELD_SEED);
     const { base, vignetteInset } = getBackgroundMetrics(safeWidth, safeHeight);
+    const edgeLayout = getEdgePlateLayout(safeWidth, safeHeight);
 
     this.baseLayer
       .clear()
@@ -129,6 +139,14 @@ export class SpaceBackground {
         )
         .fill({ color: ASTEROID_CRATER, alpha: 0.62 });
     }
+
+    this.leftEdge.position.set(edgeLayout.leftX, 0);
+    this.leftEdge.width = edgeLayout.width;
+    this.leftEdge.height = edgeLayout.height;
+
+    this.rightEdge.position.set(edgeLayout.rightX, 0);
+    this.rightEdge.width = edgeLayout.width;
+    this.rightEdge.height = edgeLayout.height;
 
     this.vignetteLayer
       .clear()
