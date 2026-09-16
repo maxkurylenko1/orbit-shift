@@ -12,14 +12,25 @@ export interface SpaceNebulaPatch {
   alpha: number;
 }
 
+export interface SpaceAsteroid {
+  x: number;
+  y: number;
+  radius: number;
+  highlightAlpha: number;
+}
+
+export interface GalaxyStar extends SpaceStar {}
+
 export interface SpaceFieldLayout {
   stars: SpaceStar[];
   nebulae: SpaceNebulaPatch[];
+  asteroids: SpaceAsteroid[];
+  galaxyStars: GalaxyStar[];
 }
 
-const MIN_STARS = 60;
+const MIN_STARS = 90;
 const MAX_STARS = 180;
-const STAR_AREA_DIVISOR = 12_000;
+const STAR_AREA_DIVISOR = 8_500;
 
 const mulberry32 = (seed: number): (() => number) => {
   let state = seed >>> 0;
@@ -48,27 +59,74 @@ export const createSpaceField = (
   const stars = Array.from({ length: count }, () => ({
     x: random() * safeWidth,
     y: random() * safeHeight,
-    radius: 0.5 + random() * 1.35,
-    alpha: 0.2 + random() * 0.65,
+    radius: 0.45 + random() * 1.5,
+    alpha: 0.18 + random() * 0.75,
   }));
 
   const base = Math.min(safeWidth, safeHeight);
   const nebulae: SpaceNebulaPatch[] = [
     {
-      x: safeWidth * 0.2,
-      y: safeHeight * 0.28,
-      radius: base * 0.34,
-      alpha: 0.035,
+      x: safeWidth * 0.08,
+      y: safeHeight * 0.14,
+      radius: base * 0.5,
+      alpha: 0.065,
+    },
+    {
+      x: safeWidth * 0.22,
+      y: safeHeight * 0.78,
+      radius: base * 0.42,
+      alpha: 0.045,
+    },
+    {
+      x: safeWidth * 0.84,
+      y: safeHeight * 0.32,
+      radius: base * 0.48,
+      alpha: 0.052,
     },
     {
       x: safeWidth * 0.8,
-      y: safeHeight * 0.7,
-      radius: base * 0.42,
-      alpha: 0.028,
+      y: safeHeight * 0.86,
+      radius: base * 0.4,
+      alpha: 0.04,
     },
   ];
 
-  return { stars, nebulae };
+  const asteroidAnchors = [
+    [-0.02, 0.12, 0.16],
+    [0.06, 0.88, 0.12],
+    [1.02, 0.84, 0.18],
+    [0.96, 0.12, 0.09],
+    [0.15, 0.58, 0.055],
+    [0.88, 0.58, 0.065],
+    [0.22, 0.18, 0.042],
+    [0.76, 0.9, 0.048],
+  ] as const;
+
+  const asteroids = asteroidAnchors.map(([x, y, radius], index) => ({
+    x: safeWidth * x,
+    y: safeHeight * y,
+    radius: base * radius,
+    highlightAlpha: 0.055 + (index % 3) * 0.018,
+  }));
+
+  const galaxyCenterX = safeWidth * 0.86;
+  const galaxyCenterY = safeHeight * 0.18;
+  const galaxyStars: GalaxyStar[] = [];
+
+  for (let index = 0; index < 54; index += 1) {
+    const t = index / 53;
+    const angle = t * Math.PI * 4.5;
+    const radius = base * (0.01 + t * 0.105);
+
+    galaxyStars.push({
+      x: galaxyCenterX + Math.cos(angle) * radius,
+      y: galaxyCenterY + Math.sin(angle) * radius * 0.48,
+      radius: 0.65 + (1 - t) * 1.5,
+      alpha: 0.12 + (1 - t) * 0.5,
+    });
+  }
+
+  return { stars, nebulae, asteroids, galaxyStars };
 };
 
 export interface BackgroundMetrics {
