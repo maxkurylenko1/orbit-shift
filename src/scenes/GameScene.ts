@@ -1,4 +1,5 @@
 import { Container, Graphics, Sprite, Text } from 'pixi.js';
+import { SpaceBackground } from '../background/SpaceBackground';
 import { calculateVisualSizes } from '../config/visualSizing';
 import type { InputManager } from '../core/InputManager';
 import type { Scene } from '../core/SceneManager';
@@ -35,6 +36,7 @@ const TAU = Math.PI * 2;
 export class GameScene implements Scene {
   public readonly view = new Container();
 
+  private readonly spaceBackground = new SpaceBackground();
   private readonly reactor = Sprite.from(REACTOR_ASSET_URL);
   private readonly orbits = new Graphics();
   private readonly obstacleLayer = new Container();
@@ -102,6 +104,7 @@ export class GameScene implements Scene {
     this.timeText.anchor.set(1, 0);
     this.countdownText.anchor.set(0.5);
     this.view.addChild(
+      this.spaceBackground.view,
       this.reactor,
       this.orbits,
       this.player.trailView,
@@ -179,6 +182,8 @@ export class GameScene implements Scene {
     this.viewportHeight = height;
     this.innerRadius = innerRadius;
     this.outerRadius = outerRadius;
+
+    this.spaceBackground.resize(width, height);
 
     this.reactor.position.set(centerX, centerY);
     this.reactor.width = reactorSize;
