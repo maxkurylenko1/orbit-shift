@@ -10,6 +10,7 @@ import { getOrbitVisuals } from '../presentation/orbitVisual';
 import {
   calculateReactorPulseAlpha,
   createReactorGlowRings,
+  getReactorFrameMetrics,
 } from '../presentation/reactorVisual';
 import { BestScoreStore } from '../systems/BestScoreStore';
 import { CollisionSystem } from '../systems/CollisionSystem';
@@ -27,6 +28,10 @@ import { GameOverOverlay } from '../ui/GameOverOverlay';
 const REACTOR_ASSET_URL = 'assets/reactor.webp';
 const ORBIT_COLOR = 0x2bc7d9;
 const ORBIT_CORE_COLOR = 0x63efff;
+const REACTOR_METAL = 0x101a25;
+const REACTOR_METAL_EDGE = 0x7893a3;
+const REACTOR_ORANGE = 0xff7a18;
+const REACTOR_CYAN = 0x31dfff;
 const HUD_COLOR = 0xe8f7ff;
 const MUTED_HUD_COLOR = 0x86a3b8;
 const INNER_RADIUS_RATIO = 0.2;
@@ -45,6 +50,8 @@ export class GameScene implements Scene {
   private readonly spaceBackground = new SpaceBackground();
   private readonly reactorGlow = new Graphics();
   private readonly reactor = Sprite.from(REACTOR_ASSET_URL);
+  private readonly reactorFrame = new Graphics();
+  private readonly reactorMask = new Graphics();
   private readonly orbits = new Graphics();
   private readonly obstacleLayer = new Container();
   private readonly collectibleLayer = new Container();
@@ -107,6 +114,7 @@ export class GameScene implements Scene {
 
   public constructor(private readonly input: InputManager) {
     this.reactor.anchor.set(0.5);
+    this.reactor.mask = this.reactorMask;
     this.comboText.anchor.set(0.5, 0);
     this.timeText.anchor.set(1, 0);
     this.countdownText.anchor.set(0.5);
@@ -114,6 +122,8 @@ export class GameScene implements Scene {
       this.spaceBackground.view,
       this.reactorGlow,
       this.reactor,
+      this.reactorFrame,
+      this.reactorMask,
       this.orbits,
       this.player.trailView,
       this.obstacleLayer,
@@ -188,6 +198,7 @@ export class GameScene implements Scene {
     const orbitVisuals = getOrbitVisuals(base);
     const hudPadding = Math.max(MIN_HUD_PADDING, base * HUD_PADDING_RATIO);
     const { reactor: reactorSize } = calculateVisualSizes(base);
+    const reactorFrame = getReactorFrameMetrics(reactorSize);
 
     this.viewportWidth = width;
     this.viewportHeight = height;
@@ -197,8 +208,13 @@ export class GameScene implements Scene {
     this.spaceBackground.resize(width, height);
 
     this.reactor.position.set(centerX, centerY);
-    this.reactor.width = reactorSize;
-    this.reactor.height = reactorSize;
+    this.reactor.width = reactorFrame.spriteSize;
+    this.reactor.height = reactorFrame.spriteSize;
+
+    this.reactorMask
+      .clear()
+      .circle(centerX, centerY, reactorFrame.maskRadius)
+      .fill({ color: 0xffffff });
 
     this.reactorGlow.clear();
     for (const ring of createReactorGlowRings(reactorSize)) {
@@ -206,6 +222,81 @@ export class GameScene implements Scene {
         .circle(centerX, centerY, ring.radius)
         .fill({ color: ring.color, alpha: ring.alpha });
     }
+
+    const frameStroke = Math.max(2, base * 0.004);
+    const accentStroke = Math.max(1.5, base * 0.0025);
+    const halfArm = reactorFrame.armLength * 0.5;
+    const halfThickness = reactorFrame.armThickness * 0.5;
+
+    this.reactorFrame
+      .clear()
+      .circle(centerX, centerY, reactorFrame.frameRadius)
+      .stroke({ color: REACTOR_METAL_EDGE, alpha: 0.36, width: frameStroke })
+      .circle(centerX, centerY, reactorFrame.frameRadius * 0.87)
+      .stroke({ color: REACTOR_ORANGE, alpha: 0.56, width: accentStroke })
+      .circle(centerX, centerY, reactorFrame.frameRadius * 0.69)
+      .stroke({ color: REACTOR_CYAN, alpha: 0.28, width: accentStroke })
+      .rect(
+        centerX - halfThickness,
+        centerY - reactorFrame.armOffset - halfArm,
+        reactorFrame.armThickness,
+        reactorFrame.armLength,
+      )
+      .fill({ color: REACTOR_METAL, alpha: 0.96 })
+      .rect(
+        centerX - halfThickness,
+        centerY + reactorFrame.armOffset - halfArm,
+        reactorFrame.armThickness,
+        reactorFrame.armLength,
+      )
+      .fill({ color: REACTOR_METAL, alpha: 0.96 })
+      .rect(
+        centerX - reactorFrame.armOffset - halfArm,
+        centerY - halfThickness,
+        reactorFrame.armLength,
+        reactorFrame.armThickness,
+      )
+      .fill({ color: REACTOR_METAL, alpha: 0.96 })
+      .rect(
+        centerX + reactorFrame.armOffset - halfArm,
+        centerY - halfThickness,
+        reactorFrame.armLength,
+        reactorFrame.armThickness,
+      )
+      .fill({ color: REACTOR_METAL, alpha: 0.96 });
+
+    const lightLength = reactorFrame.armLength * 0.42;
+    const lightThickness = Math.max(2, reactorFrame.armThickness * 0.12);
+
+    this.reactorFrame
+      .rect(
+        centerX - lightThickness * 0.5,
+        centerY - reactorFrame.armOffset - lightLength * 0.5,
+        lightThickness,
+        lightLength,
+      )
+      .fill({ color: REACTOR_ORANGE, alpha: 0.88 })
+      .rect(
+        centerX - lightThickness * 0.5,
+        centerY + reactorFrame.armOffset - lightLength * 0.5,
+        lightThickness,
+        lightLength,
+      )
+      .fill({ color: REACTOR_ORANGE, alpha: 0.88 })
+      .rect(
+        centerX - reactorFrame.armOffset - lightLength * 0.5,
+        centerY - lightThickness * 0.5,
+        lightLength,
+        lightThickness,
+      )
+      .fill({ color: REACTOR_CYAN, alpha: 0.82 })
+      .rect(
+        centerX + reactorFrame.armOffset - lightLength * 0.5,
+        centerY - lightThickness * 0.5,
+        lightLength,
+        lightThickness,
+      )
+      .fill({ color: REACTOR_CYAN, alpha: 0.82 });
 
     this.orbits
       .clear()
