@@ -6,6 +6,10 @@ import type { Scene } from '../core/SceneManager';
 import { Collectible } from '../entities/Collectible';
 import { Obstacle } from '../entities/Obstacle';
 import { Player, type OrbitLane } from '../entities/Player';
+import {
+  calculateReactorPulseAlpha,
+  createReactorGlowRings,
+} from '../presentation/reactorVisual';
 import { BestScoreStore } from '../systems/BestScoreStore';
 import { CollisionSystem } from '../systems/CollisionSystem';
 import { ComboSystem } from '../systems/ComboSystem';
@@ -37,6 +41,7 @@ export class GameScene implements Scene {
   public readonly view = new Container();
 
   private readonly spaceBackground = new SpaceBackground();
+  private readonly reactorGlow = new Graphics();
   private readonly reactor = Sprite.from(REACTOR_ASSET_URL);
   private readonly orbits = new Graphics();
   private readonly obstacleLayer = new Container();
@@ -82,6 +87,7 @@ export class GameScene implements Scene {
   private collectibleSpawnElapsed = 0;
   private nextCollectibleLane: OrbitLane = 'outer';
   private bestScore = 0;
+  private reactorPulseElapsed = 0;
   private unsubscribeInput: (() => void) | null = null;
 
   private readonly handleAction = (): void => {
@@ -99,12 +105,12 @@ export class GameScene implements Scene {
 
   public constructor(private readonly input: InputManager) {
     this.reactor.anchor.set(0.5);
-    this.reactor.blendMode = 'screen';
     this.comboText.anchor.set(0.5, 0);
     this.timeText.anchor.set(1, 0);
     this.countdownText.anchor.set(0.5);
     this.view.addChild(
       this.spaceBackground.view,
+      this.reactorGlow,
       this.reactor,
       this.orbits,
       this.player.trailView,
@@ -127,6 +133,9 @@ export class GameScene implements Scene {
   }
 
   public update(deltaSeconds: number): void {
+    this.reactorPulseElapsed += Math.max(0, deltaSeconds);
+    this.reactorGlow.alpha = calculateReactorPulseAlpha(this.reactorPulseElapsed);
+
     if (!this.player.alive) {
       return;
     }
@@ -188,6 +197,13 @@ export class GameScene implements Scene {
     this.reactor.position.set(centerX, centerY);
     this.reactor.width = reactorSize;
     this.reactor.height = reactorSize;
+
+    this.reactorGlow.clear();
+    for (const ring of createReactorGlowRings(reactorSize)) {
+      this.reactorGlow
+        .circle(centerX, centerY, ring.radius)
+        .fill({ color: ring.color, alpha: ring.alpha });
+    }
 
     this.orbits
       .clear()
