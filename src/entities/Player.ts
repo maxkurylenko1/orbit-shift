@@ -1,5 +1,9 @@
 import { Graphics, Sprite } from 'pixi.js';
 import { calculateVisualSizes } from '../config/visualSizing';
+import {
+  getPlayerPresentationMetrics,
+  PLAYER_TRAIL_POINT_COUNT,
+} from '../presentation/playerVisual';
 import { calculatePlayerVisualRotation } from '../utils/playerVisual';
 
 export type OrbitLane = 'inner' | 'outer';
@@ -9,7 +13,6 @@ const LANE_SWITCH_DURATION = 0.14;
 const INITIAL_LANE: OrbitLane = 'outer';
 const INITIAL_ANGLE = -Math.PI / 2;
 const TAU = Math.PI * 2;
-const TRAIL_POINT_COUNT = 12;
 const TRAIL_COLOR = 0x42e8ff;
 
 const easeInOutQuad = (t: number): number =>
@@ -31,11 +34,15 @@ export class Player {
   private centerY = 0;
   private innerRadius = 0;
   private outerRadius = 0;
-  private trailWidth = 2;
+  private trailWidth = 2.5;
+  private trailTailAlpha = 0.025;
+  private trailHeadAlpha = 0.48;
+  private glowRadius = 18;
+  private glowAlpha = 0.11;
   private trailCount = 0;
   private trailHead = 0;
-  private readonly trailX = new Float32Array(TRAIL_POINT_COUNT);
-  private readonly trailY = new Float32Array(TRAIL_POINT_COUNT);
+  private readonly trailX = new Float32Array(PLAYER_TRAIL_POINT_COUNT);
+  private readonly trailY = new Float32Array(PLAYER_TRAIL_POINT_COUNT);
 
   public constructor() {
     this.view.anchor.set(0.5);
@@ -88,6 +95,7 @@ export class Player {
     this.transitionProgress = 1;
     this.clearTrail();
     this.updatePosition();
+    this.redrawTrail();
   }
 
   public resize(
@@ -98,16 +106,22 @@ export class Player {
   ): void {
     const base = Math.min(width, height);
     const { player: visualSize } = calculateVisualSizes(base);
+    const presentation = getPlayerPresentationMetrics(base);
 
     this.centerX = width * 0.5;
     this.centerY = height * 0.5;
     this.innerRadius = innerRadius;
     this.outerRadius = outerRadius;
-    this.trailWidth = Math.max(2, base * 0.006);
+    this.trailWidth = presentation.trailWidth;
+    this.trailTailAlpha = presentation.trailTailAlpha;
+    this.trailHeadAlpha = presentation.trailHeadAlpha;
+    this.glowRadius = presentation.glowRadius;
+    this.glowAlpha = presentation.glowAlpha;
     this.view.width = visualSize;
     this.view.height = visualSize;
     this.clearTrail();
     this.updatePosition();
+    this.redrawTrail();
   }
 
   private updatePosition(): void {
@@ -126,32 +140,48 @@ export class Player {
   private recordTrailPoint(): void {
     this.trailX[this.trailHead] = this.view.x;
     this.trailY[this.trailHead] = this.view.y;
-    this.trailHead = (this.trailHead + 1) % TRAIL_POINT_COUNT;
-    this.trailCount = Math.min(TRAIL_POINT_COUNT, this.trailCount + 1);
+    this.trailHead = (this.trailHead + 1) % PLAYER_TRAIL_POINT_COUNT;
+    this.trailCount = Math.min(
+      PLAYER_TRAIL_POINT_COUNT,
+      this.trailCount + 1,
+    );
   }
 
   private redrawTrail(): void {
     this.trailView.clear();
+
+    this.trailView
+      .circle(this.view.x, this.view.y, this.glowRadius)
+      .fill({ color: TRAIL_COLOR, alpha: this.glowAlpha * 0.12 })
+      .circle(this.view.x, this.view.y, this.glowRadius * 0.64)
+      .fill({ color: TRAIL_COLOR, alpha: this.glowAlpha * 0.22 })
+      .circle(this.view.x, this.view.y, this.glowRadius * 0.34)
+      .fill({ color: TRAIL_COLOR, alpha: this.glowAlpha * 0.38 });
 
     if (this.trailCount < 2) {
       return;
     }
 
     const oldestIndex =
-      (this.trailHead - this.trailCount + TRAIL_POINT_COUNT) % TRAIL_POINT_COUNT;
+      (this.trailHead - this.trailCount + PLAYER_TRAIL_POINT_COUNT) %
+      PLAYER_TRAIL_POINT_COUNT;
 
     for (let index = 1; index < this.trailCount; index += 1) {
-      const previousIndex = (oldestIndex + index - 1) % TRAIL_POINT_COUNT;
-      const currentIndex = (oldestIndex + index) % TRAIL_POINT_COUNT;
+      const previousIndex =
+        (oldestIndex + index - 1) % PLAYER_TRAIL_POINT_COUNT;
+      const currentIndex = (oldestIndex + index) % PLAYER_TRAIL_POINT_COUNT;
       const progress = index / (this.trailCount - 1);
+      const alpha =
+        this.trailTailAlpha +
+        (this.trailHeadAlpha - this.trailTailAlpha) * progress;
 
       this.trailView
         .moveTo(this.trailX[previousIndex], this.trailY[previousIndex])
         .lineTo(this.trailX[currentIndex], this.trailY[currentIndex])
         .stroke({
           color: TRAIL_COLOR,
-          alpha: 0.05 + progress * 0.38,
-          width: this.trailWidth * (0.45 + progress * 0.55),
+          alpha,
+          width: this.trailWidth * (0.35 + progress * 0.65),
         });
     }
   }

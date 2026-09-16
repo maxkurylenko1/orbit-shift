@@ -1,6 +1,6 @@
-const PLAYER_VISUAL_RATIO = 0.085;
+const PLAYER_VISUAL_RATIO = 0.092;
 const REACTOR_VISUAL_RATIO = 0.31;
-const MIN_PLAYER_VISUAL_SIZE = 28;
+const MIN_PLAYER_VISUAL_SIZE = 30;
 const MIN_REACTOR_VISUAL_SIZE = 104;
 
 export interface VisualSizes {
