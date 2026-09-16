@@ -1,4 +1,4 @@
-const EDGE_SOURCE_ASPECT = 145 / 330;
+const EDGE_SOURCE_ASPECT = 360 / 920;
 const MAX_VIEWPORT_WIDTH_RATIO = 0.28;
 
 export interface EdgePlateLayout {
