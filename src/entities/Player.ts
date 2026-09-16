@@ -1,5 +1,6 @@
-import { Sprite } from 'pixi.js';
+import { Graphics, Sprite } from 'pixi.js';
 import { calculateVisualSizes } from '../config/visualSizing';
+import { calculatePlayerVisualRotation } from '../utils/playerVisual';
 
 export type OrbitLane = 'inner' | 'outer';
 
@@ -8,11 +9,14 @@ const LANE_SWITCH_DURATION = 0.14;
 const INITIAL_LANE: OrbitLane = 'outer';
 const INITIAL_ANGLE = -Math.PI / 2;
 const TAU = Math.PI * 2;
+const TRAIL_POINT_COUNT = 12;
+const TRAIL_COLOR = 0x42e8ff;
 
 const easeInOutQuad = (t: number): number =>
   t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
 export class Player {
+  public readonly trailView = new Graphics();
   public readonly view = Sprite.from(PLAYER_ASSET_URL);
 
   public lane: OrbitLane = INITIAL_LANE;
@@ -27,6 +31,11 @@ export class Player {
   private centerY = 0;
   private innerRadius = 0;
   private outerRadius = 0;
+  private trailWidth = 2;
+  private trailCount = 0;
+  private trailHead = 0;
+  private readonly trailX = new Float32Array(TRAIL_POINT_COUNT);
+  private readonly trailY = new Float32Array(TRAIL_POINT_COUNT);
 
   public constructor() {
     this.view.anchor.set(0.5);
@@ -56,6 +65,8 @@ export class Player {
     }
 
     this.updatePosition();
+    this.recordTrailPoint();
+    this.redrawTrail();
   }
 
   public switchLane(): void {
@@ -75,6 +86,7 @@ export class Player {
     this.transitionFromLane = INITIAL_LANE;
     this.transitionToLane = INITIAL_LANE;
     this.transitionProgress = 1;
+    this.clearTrail();
     this.updatePosition();
   }
 
@@ -91,8 +103,10 @@ export class Player {
     this.centerY = height * 0.5;
     this.innerRadius = innerRadius;
     this.outerRadius = outerRadius;
+    this.trailWidth = Math.max(2, base * 0.006);
     this.view.width = visualSize;
     this.view.height = visualSize;
+    this.clearTrail();
     this.updatePosition();
   }
 
@@ -106,6 +120,46 @@ export class Player {
       this.centerX + Math.cos(this.angle) * radius,
       this.centerY + Math.sin(this.angle) * radius,
     );
+    this.view.rotation = calculatePlayerVisualRotation(this.angle);
+  }
+
+  private recordTrailPoint(): void {
+    this.trailX[this.trailHead] = this.view.x;
+    this.trailY[this.trailHead] = this.view.y;
+    this.trailHead = (this.trailHead + 1) % TRAIL_POINT_COUNT;
+    this.trailCount = Math.min(TRAIL_POINT_COUNT, this.trailCount + 1);
+  }
+
+  private redrawTrail(): void {
+    this.trailView.clear();
+
+    if (this.trailCount < 2) {
+      return;
+    }
+
+    const oldestIndex =
+      (this.trailHead - this.trailCount + TRAIL_POINT_COUNT) % TRAIL_POINT_COUNT;
+
+    for (let index = 1; index < this.trailCount; index += 1) {
+      const previousIndex = (oldestIndex + index - 1) % TRAIL_POINT_COUNT;
+      const currentIndex = (oldestIndex + index) % TRAIL_POINT_COUNT;
+      const progress = index / (this.trailCount - 1);
+
+      this.trailView
+        .moveTo(this.trailX[previousIndex], this.trailY[previousIndex])
+        .lineTo(this.trailX[currentIndex], this.trailY[currentIndex])
+        .stroke({
+          color: TRAIL_COLOR,
+          alpha: 0.05 + progress * 0.38,
+          width: this.trailWidth * (0.45 + progress * 0.55),
+        });
+    }
+  }
+
+  private clearTrail(): void {
+    this.trailCount = 0;
+    this.trailHead = 0;
+    this.trailView.clear();
   }
 
   private getLaneRadius(lane: OrbitLane): number {

@@ -97,12 +97,14 @@ export class GameScene implements Scene {
 
   public constructor(private readonly input: InputManager) {
     this.reactor.anchor.set(0.5);
+    this.reactor.blendMode = 'screen';
     this.comboText.anchor.set(0.5, 0);
     this.timeText.anchor.set(1, 0);
     this.countdownText.anchor.set(0.5);
     this.view.addChild(
       this.reactor,
       this.orbits,
+      this.player.trailView,
       this.obstacleLayer,
       this.collectibleLayer,
       this.player.view,
@@ -185,9 +187,13 @@ export class GameScene implements Scene {
     this.orbits
       .clear()
       .circle(centerX, centerY, innerRadius)
-      .stroke({ color: ORBIT_COLOR, alpha: 0.32, width: lineWidth })
+      .stroke({ color: ORBIT_COLOR, alpha: 0.08, width: lineWidth * 5 })
+      .circle(centerX, centerY, innerRadius)
+      .stroke({ color: ORBIT_COLOR, alpha: 0.48, width: lineWidth })
       .circle(centerX, centerY, outerRadius)
-      .stroke({ color: ORBIT_COLOR, alpha: 0.2, width: lineWidth });
+      .stroke({ color: ORBIT_COLOR, alpha: 0.05, width: lineWidth * 4 })
+      .circle(centerX, centerY, outerRadius)
+      .stroke({ color: ORBIT_COLOR, alpha: 0.28, width: lineWidth });
 
     this.player.resize(width, height, innerRadius, outerRadius);
     this.scoreText.position.set(hudPadding, hudPadding);
