@@ -1,10 +1,9 @@
-import { Graphics } from 'pixi.js';
+import { Sprite } from 'pixi.js';
+import { calculateVisualSizes } from '../config/visualSizing';
 
 export type OrbitLane = 'inner' | 'outer';
 
-const PLAYER_COLOR = 0x42e8ff;
-const PLAYER_RADIUS_RATIO = 0.018;
-const MIN_PLAYER_RADIUS = 5;
+const PLAYER_ASSET_URL = 'assets/player.webp';
 const LANE_SWITCH_DURATION = 0.14;
 const INITIAL_LANE: OrbitLane = 'outer';
 const INITIAL_ANGLE = -Math.PI / 2;
@@ -14,7 +13,7 @@ const easeInOutQuad = (t: number): number =>
   t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
 export class Player {
-  public readonly view = new Graphics();
+  public readonly view = Sprite.from(PLAYER_ASSET_URL);
 
   public lane: OrbitLane = INITIAL_LANE;
   public angle = INITIAL_ANGLE;
@@ -28,6 +27,10 @@ export class Player {
   private centerY = 0;
   private innerRadius = 0;
   private outerRadius = 0;
+
+  public constructor() {
+    this.view.anchor.set(0.5);
+  }
 
   public update(deltaSeconds: number): void {
     if (!this.alive) {
@@ -82,14 +85,14 @@ export class Player {
     outerRadius: number,
   ): void {
     const base = Math.min(width, height);
-    const playerRadius = Math.max(MIN_PLAYER_RADIUS, base * PLAYER_RADIUS_RATIO);
+    const { player: visualSize } = calculateVisualSizes(base);
 
     this.centerX = width * 0.5;
     this.centerY = height * 0.5;
     this.innerRadius = innerRadius;
     this.outerRadius = outerRadius;
-
-    this.view.clear().circle(0, 0, playerRadius).fill({ color: PLAYER_COLOR });
+    this.view.width = visualSize;
+    this.view.height = visualSize;
     this.updatePosition();
   }
 

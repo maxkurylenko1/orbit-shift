@@ -1,4 +1,5 @@
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Text } from 'pixi.js';
+import { calculateVisualSizes } from '../config/visualSizing';
 import type { InputManager } from '../core/InputManager';
 import type { Scene } from '../core/SceneManager';
 import { Collectible } from '../entities/Collectible';
@@ -17,6 +18,7 @@ import { ScoreSystem } from '../systems/ScoreSystem';
 import { SpawnSystem } from '../systems/SpawnSystem';
 import { GameOverOverlay } from '../ui/GameOverOverlay';
 
+const REACTOR_ASSET_URL = 'assets/reactor.webp';
 const ORBIT_COLOR = 0x2bc7d9;
 const HUD_COLOR = 0xe8f7ff;
 const MUTED_HUD_COLOR = 0x86a3b8;
@@ -33,6 +35,7 @@ const TAU = Math.PI * 2;
 export class GameScene implements Scene {
   public readonly view = new Container();
 
+  private readonly reactor = Sprite.from(REACTOR_ASSET_URL);
   private readonly orbits = new Graphics();
   private readonly obstacleLayer = new Container();
   private readonly collectibleLayer = new Container();
@@ -93,10 +96,12 @@ export class GameScene implements Scene {
   };
 
   public constructor(private readonly input: InputManager) {
+    this.reactor.anchor.set(0.5);
     this.comboText.anchor.set(0.5, 0);
     this.timeText.anchor.set(1, 0);
     this.countdownText.anchor.set(0.5);
     this.view.addChild(
+      this.reactor,
       this.orbits,
       this.obstacleLayer,
       this.collectibleLayer,
@@ -166,11 +171,16 @@ export class GameScene implements Scene {
     const outerRadius = base * OUTER_RADIUS_RATIO;
     const lineWidth = Math.max(1, base * 0.003);
     const hudPadding = Math.max(MIN_HUD_PADDING, base * HUD_PADDING_RATIO);
+    const { reactor: reactorSize } = calculateVisualSizes(base);
 
     this.viewportWidth = width;
     this.viewportHeight = height;
     this.innerRadius = innerRadius;
     this.outerRadius = outerRadius;
+
+    this.reactor.position.set(centerX, centerY);
+    this.reactor.width = reactorSize;
+    this.reactor.height = reactorSize;
 
     this.orbits
       .clear()
