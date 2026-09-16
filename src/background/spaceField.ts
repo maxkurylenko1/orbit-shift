@@ -70,3 +70,21 @@ export const createSpaceField = (
 
   return { stars, nebulae };
 };
+
+export interface BackgroundMetrics {
+  base: number;
+  centerGlowRadius: number;
+  vignetteInset: number;
+}
+
+export const getBackgroundMetrics = (
+  width: number,
+  height: number,
+): BackgroundMetrics => {
+  const base = Math.max(1, Math.min(width, height));
+  return {
+    base,
+    centerGlowRadius: Math.round(base * 0.45),
+    vignetteInset: Math.round(base * 0.07),
+  };
+};

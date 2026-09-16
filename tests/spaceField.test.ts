@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createSpaceField } from '../src/background/spaceField.ts';
+import { createSpaceField, getBackgroundMetrics } from '../src/background/spaceField.ts';
 
 test('createSpaceField is deterministic for the same viewport and seed', () => {
   const first = createSpaceField(1280, 720, 42);
@@ -25,4 +25,12 @@ test('createSpaceField scales density from viewport area without exploding on la
   const desktop = createSpaceField(1920, 1080, 42);
   assert.ok(desktop.stars.length > mobile.stars.length);
   assert.ok(desktop.stars.length <= 180);
+});
+
+test('background metrics scale from the smaller viewport dimension', () => {
+  assert.deepEqual(getBackgroundMetrics(1280, 720), {
+    base: 720,
+    centerGlowRadius: 324,
+    vignetteInset: 50,
+  });
 });
