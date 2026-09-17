@@ -1,4 +1,5 @@
 import { Container, Graphics } from 'pixi.js';
+import { createAsteroidPolygon } from './asteroidShape';
 import { createSpaceField, getBackgroundMetrics } from './spaceField';
 
 const BASE_COLOR = 0x02050d;
@@ -48,27 +49,27 @@ export class SpaceBackground {
       .rect(0, 0, safeWidth, safeHeight)
       .fill({ color: BASE_COLOR })
       .rect(0, 0, safeWidth, safeHeight)
-      .fill({ color: WASH_COLOR, alpha: 0.34 });
+      .fill({ color: WASH_COLOR, alpha: 0.3 });
 
     this.nebulaLayer.clear();
 
     for (const patch of layout.nebulae) {
-      for (let layer = 3; layer >= 1; layer -= 1) {
-        const progress = layer / 3;
-        const radiusX = patch.radius * (0.72 + progress * 0.72);
-        const radiusY = patch.radius * (0.22 + progress * 0.28);
-        const offset = patch.radius * (1 - progress) * 0.16;
+      for (let layer = 2; layer >= 1; layer -= 1) {
+        const progress = layer / 2;
+        const radiusX = patch.radius * (0.9 + progress * 0.55);
+        const radiusY = patch.radius * (0.18 + progress * 0.18);
+        const offset = patch.radius * (1 - progress) * 0.2;
 
         this.nebulaLayer
           .ellipse(
             patch.x + offset,
-            patch.y - offset * 0.35,
+            patch.y - offset * 0.3,
             radiusX,
             radiusY,
           )
           .fill({
             color: layer === 1 ? NEBULA_CORE_COLOR : NEBULA_COLOR,
-            alpha: patch.alpha * (0.28 + (1 - progress) * 0.48),
+            alpha: patch.alpha * (0.34 + (1 - progress) * 0.4),
           });
       }
     }
@@ -123,33 +124,41 @@ export class SpaceBackground {
 
     this.asteroidLayer.clear();
 
-    for (const asteroid of layout.asteroids) {
-      const edgeWidth = Math.max(0.8, asteroid.radius * 0.018);
+    layout.asteroids.forEach((asteroid, index) => {
+      const edgeWidth = Math.max(0.8, asteroid.radius * 0.02);
+      const silhouette = createAsteroidPolygon(
+        asteroid.x,
+        asteroid.y,
+        asteroid.radius,
+        index,
+      );
+      const highlight = createAsteroidPolygon(
+        asteroid.x - asteroid.radius * 0.12,
+        asteroid.y - asteroid.radius * 0.14,
+        asteroid.radius * 0.58,
+        index + 3,
+      );
 
       this.asteroidLayer
-        .circle(asteroid.x, asteroid.y, asteroid.radius)
+        .poly(silhouette, true)
         .fill({ color: ASTEROID_COLOR, alpha: 1 })
-        .circle(asteroid.x, asteroid.y, asteroid.radius * 0.96)
+        .poly(silhouette, true)
         .stroke({ color: ASTEROID_EDGE, alpha: 0.22, width: edgeWidth })
-        .circle(
-          asteroid.x - asteroid.radius * 0.18,
-          asteroid.y - asteroid.radius * 0.2,
-          asteroid.radius * 0.5,
-        )
+        .poly(highlight, true)
         .fill({ color: ASTEROID_HIGHLIGHT, alpha: asteroid.highlightAlpha })
         .circle(
-          asteroid.x + asteroid.radius * 0.2,
-          asteroid.y - asteroid.radius * 0.12,
-          asteroid.radius * 0.15,
+          asteroid.x + asteroid.radius * 0.18,
+          asteroid.y - asteroid.radius * 0.08,
+          asteroid.radius * 0.11,
         )
-        .fill({ color: ASTEROID_CRATER, alpha: 0.86 })
+        .fill({ color: ASTEROID_CRATER, alpha: 0.82 })
         .circle(
-          asteroid.x - asteroid.radius * 0.24,
-          asteroid.y + asteroid.radius * 0.18,
-          asteroid.radius * 0.1,
+          asteroid.x - asteroid.radius * 0.2,
+          asteroid.y + asteroid.radius * 0.16,
+          asteroid.radius * 0.075,
         )
-        .fill({ color: ASTEROID_CRATER, alpha: 0.76 });
-    }
+        .fill({ color: ASTEROID_CRATER, alpha: 0.72 });
+    });
 
     this.vignetteLayer
       .clear()
