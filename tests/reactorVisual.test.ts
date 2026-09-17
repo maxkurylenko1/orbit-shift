@@ -1,35 +1,40 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { calculateVisualSizes } from '../src/config/visualSizing.ts';
 import {
+  calculateCorePulseScale,
   calculateReactorPulseAlpha,
+  calculateReactorRingRotation,
   createReactorGlowRings,
-  getReactorFrameMetrics,
+  getReactorAssemblyMetrics,
 } from '../src/presentation/reactorVisual.ts';
 
-test('reactor anchors the center with breathing room', () => {
-  assert.equal(calculateVisualSizes(1000).reactor, 310);
-  assert.equal(calculateVisualSizes(200).reactor, 104);
-});
+test('reactor glow extends outside the mechanical body without becoming dominant', () => {
+  const rings = createReactorGlowRings(300);
+  const metrics = getReactorAssemblyMetrics(300);
 
-test('reactor glow reaches beyond the frame while staying controlled', () => {
-  const rings = createReactorGlowRings(310);
-  assert.equal(rings.length, 5);
-  assert.ok(rings[0].radius >= 195 && rings[0].radius <= 215);
+  assert.equal(rings.length, 4);
+  assert.ok(rings[0].radius > metrics.outerRadius);
   assert.ok(Math.max(...rings.map((ring) => ring.alpha)) <= 0.05);
-  assert.ok(Math.max(...rings.map((ring) => ring.alpha)) >= 0.035);
 });
 
-test('legacy reactor sprite is contained inside a circular mechanical frame', () => {
-  const frame = getReactorFrameMetrics(310);
-  assert.ok(frame.spriteSize < 310);
-  assert.ok(frame.maskRadius < frame.frameRadius);
-  assert.ok(frame.armLength > frame.armThickness);
+test('reactor assembly keeps every layer nested inside one circular silhouette', () => {
+  const metrics = getReactorAssemblyMetrics(300);
+
+  assert.equal(metrics.outerRadius, 150);
+  assert.ok(metrics.bodyRadius < metrics.outerRadius);
+  assert.ok(metrics.innerRingRadius < metrics.bodyRadius);
+  assert.ok(metrics.coreRadius < metrics.innerRingRadius);
+  assert.ok(metrics.armOffset + metrics.armLength * 0.5 <= metrics.outerRadius);
 });
 
-test('reactor pulse remains subtle', () => {
+test('reactor animation remains subtle', () => {
   for (const elapsed of [0, 0.8, 1.6, 2.4, 3.2]) {
-    const alpha = calculateReactorPulseAlpha(elapsed);
-    assert.ok(alpha >= 0.94 && alpha <= 1);
+    assert.ok(calculateReactorPulseAlpha(elapsed) >= 0.93);
+    assert.ok(calculateReactorPulseAlpha(elapsed) <= 0.99);
+    assert.ok(calculateCorePulseScale(elapsed) >= 0.96);
+    assert.ok(calculateCorePulseScale(elapsed) <= 1.04);
   }
+
+  assert.ok(calculateReactorRingRotation(10) > 0);
+  assert.ok(calculateReactorRingRotation(10) < Math.PI * 2);
 });
