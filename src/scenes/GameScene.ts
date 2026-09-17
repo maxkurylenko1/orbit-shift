@@ -6,6 +6,7 @@ import type { Scene } from '../core/SceneManager';
 import { Collectible } from '../entities/Collectible';
 import { Obstacle } from '../entities/Obstacle';
 import { Player, type OrbitLane } from '../entities/Player';
+import { getHudVisualMetrics, snapHudCoordinate } from '../presentation/hudVisual';
 import { getOrbitVisuals } from '../presentation/orbitVisual';
 import {
   calculateReactorPulseAlpha,
@@ -34,6 +35,7 @@ const REACTOR_ORANGE = 0xff7a18;
 const REACTOR_CYAN = 0x31dfff;
 const HUD_COLOR = 0xe8f7ff;
 const MUTED_HUD_COLOR = 0x86a3b8;
+const HUD_FONT_FAMILY = ['Inter', 'Segoe UI', 'Arial', 'sans-serif'];
 const INNER_RADIUS_RATIO = 0.2;
 const OUTER_RADIUS_RATIO = 0.31;
 const MAX_OBSTACLES = 8;
@@ -69,19 +71,47 @@ export class GameScene implements Scene {
   });
   private readonly scoreText = new Text({
     text: 'SCORE 0',
-    style: { fill: HUD_COLOR, fontFamily: 'Arial', fontSize: 18, fontWeight: '600' },
+    roundPixels: true,
+    style: {
+      fill: HUD_COLOR,
+      fontFamily: HUD_FONT_FAMILY,
+      fontSize: 18,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+    },
   });
   private readonly bestText = new Text({
     text: 'BEST 0',
-    style: { fill: MUTED_HUD_COLOR, fontFamily: 'Arial', fontSize: 15, fontWeight: '500' },
+    roundPixels: true,
+    style: {
+      fill: MUTED_HUD_COLOR,
+      fontFamily: HUD_FONT_FAMILY,
+      fontSize: 15,
+      fontWeight: '500',
+      letterSpacing: 0.45,
+    },
   });
   private readonly comboText = new Text({
     text: 'COMBO x2',
-    style: { fill: HUD_COLOR, fontFamily: 'Arial', fontSize: 18, fontWeight: '600' },
+    roundPixels: true,
+    style: {
+      fill: HUD_COLOR,
+      fontFamily: HUD_FONT_FAMILY,
+      fontSize: 18,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+    },
   });
   private readonly timeText = new Text({
     text: '0.0s',
-    style: { fill: HUD_COLOR, fontFamily: 'Arial', fontSize: 18, fontWeight: '600' },
+    roundPixels: true,
+    style: {
+      fill: HUD_COLOR,
+      fontFamily: HUD_FONT_FAMILY,
+      fontSize: 18,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+    },
   });
   private readonly countdownText = new Text({
     text: '3',
@@ -196,7 +226,10 @@ export class GameScene implements Scene {
     const innerRadius = base * INNER_RADIUS_RATIO;
     const outerRadius = base * OUTER_RADIUS_RATIO;
     const orbitVisuals = getOrbitVisuals(base);
-    const hudPadding = Math.max(MIN_HUD_PADDING, base * HUD_PADDING_RATIO);
+    const hudVisuals = getHudVisualMetrics(base, window.devicePixelRatio || 1);
+    const hudPadding = snapHudCoordinate(
+      Math.max(MIN_HUD_PADDING, base * HUD_PADDING_RATIO),
+    );
     const { reactor: reactorSize } = calculateVisualSizes(base);
     const reactorFrame = getReactorFrameMetrics(reactorSize);
 
@@ -343,10 +376,28 @@ export class GameScene implements Scene {
     }
 
     this.player.resize(width, height, innerRadius, outerRadius);
+
+    this.scoreText.resolution = hudVisuals.resolution;
+    this.bestText.resolution = hudVisuals.resolution;
+    this.comboText.resolution = hudVisuals.resolution;
+    this.timeText.resolution = hudVisuals.resolution;
+
+    this.scoreText.style.fontSize = hudVisuals.primaryFontSize;
+    this.scoreText.style.letterSpacing = hudVisuals.letterSpacing;
+    this.bestText.style.fontSize = hudVisuals.secondaryFontSize;
+    this.bestText.style.letterSpacing = hudVisuals.letterSpacing * 0.85;
+    this.comboText.style.fontSize = hudVisuals.primaryFontSize;
+    this.comboText.style.letterSpacing = hudVisuals.letterSpacing;
+    this.timeText.style.fontSize = hudVisuals.primaryFontSize;
+    this.timeText.style.letterSpacing = hudVisuals.letterSpacing;
+
     this.scoreText.position.set(hudPadding, hudPadding);
-    this.bestText.position.set(hudPadding, hudPadding + Math.max(20, base * 0.028));
-    this.comboText.position.set(width * 0.5, hudPadding);
-    this.timeText.position.set(width - hudPadding, hudPadding);
+    this.bestText.position.set(
+      hudPadding,
+      snapHudCoordinate(hudPadding + hudVisuals.lineGap),
+    );
+    this.comboText.position.set(snapHudCoordinate(width * 0.5), hudPadding);
+    this.timeText.position.set(snapHudCoordinate(width - hudPadding), hudPadding);
     this.countdownText.style.fontSize = Math.max(48, base * 0.1);
     this.countdownText.position.set(centerX, centerY);
     this.gameOverOverlay.resize(width, height);
