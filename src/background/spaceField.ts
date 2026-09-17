@@ -65,19 +65,19 @@ export const createSpaceField = (
 
   const base = Math.min(safeWidth, safeHeight);
   const nebulae: SpaceNebulaPatch[] = [
-    { x: safeWidth * 0.02, y: safeHeight * 0.16, radius: base * 0.24, alpha: 0.035 },
-    { x: safeWidth * 0.1, y: safeHeight * 0.86, radius: base * 0.22, alpha: 0.03 },
-    { x: safeWidth * 0.98, y: safeHeight * 0.2, radius: base * 0.23, alpha: 0.032 },
-    { x: safeWidth * 0.9, y: safeHeight * 0.84, radius: base * 0.21, alpha: 0.028 },
+    { x: safeWidth * 0.01, y: safeHeight * 0.14, radius: base * 0.13, alpha: 0.026 },
+    { x: safeWidth * 0.08, y: safeHeight * 0.88, radius: base * 0.12, alpha: 0.022 },
+    { x: safeWidth * 0.99, y: safeHeight * 0.18, radius: base * 0.13, alpha: 0.024 },
+    { x: safeWidth * 0.92, y: safeHeight * 0.86, radius: base * 0.12, alpha: 0.021 },
   ];
 
   const asteroidAnchors = [
-    [-0.03, 0.1, 0.17],
-    [0.04, 0.9, 0.13],
-    [1.03, 0.86, 0.18],
-    [0.98, 0.1, 0.1],
-    [0.12, 0.24, 0.048],
-    [0.9, 0.68, 0.056],
+    [-0.02, 0.08, 0.09],
+    [0.02, 0.9, 0.065],
+    [1.02, 0.88, 0.095],
+    [0.99, 0.09, 0.055],
+    [0.11, 0.25, 0.028],
+    [0.9, 0.72, 0.034],
   ] as const;
 
   const asteroids = asteroidAnchors.map(([x, y, radius], index) => ({
