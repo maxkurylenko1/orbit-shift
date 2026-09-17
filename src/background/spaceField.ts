@@ -28,9 +28,9 @@ export interface SpaceFieldLayout {
   galaxyStars: GalaxyStar[];
 }
 
-const MIN_STARS = 90;
+const MIN_STARS = 120;
 const MAX_STARS = 180;
-const STAR_AREA_DIVISOR = 8_500;
+const STAR_AREA_DIVISOR = 7_000;
 
 const mulberry32 = (seed: number): (() => number) => {
   let state = seed >>> 0;
@@ -59,54 +59,32 @@ export const createSpaceField = (
   const stars = Array.from({ length: count }, () => ({
     x: random() * safeWidth,
     y: random() * safeHeight,
-    radius: 0.45 + random() * 1.5,
-    alpha: 0.18 + random() * 0.75,
+    radius: 0.35 + random() * 1.2,
+    alpha: 0.22 + random() * 0.72,
   }));
 
   const base = Math.min(safeWidth, safeHeight);
   const nebulae: SpaceNebulaPatch[] = [
-    {
-      x: safeWidth * 0.08,
-      y: safeHeight * 0.14,
-      radius: base * 0.5,
-      alpha: 0.065,
-    },
-    {
-      x: safeWidth * 0.22,
-      y: safeHeight * 0.78,
-      radius: base * 0.42,
-      alpha: 0.045,
-    },
-    {
-      x: safeWidth * 0.84,
-      y: safeHeight * 0.32,
-      radius: base * 0.48,
-      alpha: 0.052,
-    },
-    {
-      x: safeWidth * 0.8,
-      y: safeHeight * 0.86,
-      radius: base * 0.4,
-      alpha: 0.04,
-    },
+    { x: safeWidth * 0.02, y: safeHeight * 0.16, radius: base * 0.24, alpha: 0.035 },
+    { x: safeWidth * 0.1, y: safeHeight * 0.86, radius: base * 0.22, alpha: 0.03 },
+    { x: safeWidth * 0.98, y: safeHeight * 0.2, radius: base * 0.23, alpha: 0.032 },
+    { x: safeWidth * 0.9, y: safeHeight * 0.84, radius: base * 0.21, alpha: 0.028 },
   ];
 
   const asteroidAnchors = [
-    [-0.02, 0.12, 0.16],
-    [0.06, 0.88, 0.12],
-    [1.02, 0.84, 0.18],
-    [0.96, 0.12, 0.09],
-    [0.15, 0.58, 0.055],
-    [0.88, 0.58, 0.065],
-    [0.22, 0.18, 0.042],
-    [0.76, 0.9, 0.048],
+    [-0.03, 0.1, 0.17],
+    [0.04, 0.9, 0.13],
+    [1.03, 0.86, 0.18],
+    [0.98, 0.1, 0.1],
+    [0.12, 0.24, 0.048],
+    [0.9, 0.68, 0.056],
   ] as const;
 
   const asteroids = asteroidAnchors.map(([x, y, radius], index) => ({
     x: safeWidth * x,
     y: safeHeight * y,
     radius: base * radius,
-    highlightAlpha: 0.055 + (index % 3) * 0.018,
+    highlightAlpha: 0.07 + (index % 3) * 0.018,
   }));
 
   const galaxyCenterX = safeWidth * 0.86;
