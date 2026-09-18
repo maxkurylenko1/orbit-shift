@@ -2,8 +2,8 @@ import { Container, Sprite } from 'pixi.js';
 import { getCoverLayout } from './backgroundLayout';
 
 const BACKGROUND_ASSET_URL = 'assets/space-background.webp';
-const BACKGROUND_SOURCE_WIDTH = 1366;
-const BACKGROUND_SOURCE_HEIGHT = 768;
+const BACKGROUND_SOURCE_WIDTH = 1672;
+const BACKGROUND_SOURCE_HEIGHT = 941;
 
 export class SpaceBackground {
   public readonly view = new Container();
