@@ -6,7 +6,7 @@ import {
   calculateReactorRingRotation,
   createReactorGlowRings,
   getReactorAssemblyMetrics,
-} from '../src/presentation/reactorVisual.ts';
+} from '../src/presentation/reactorGeometry.ts';
 
 test('reactor glow extends outside the mechanical body without becoming dominant', () => {
   const rings = createReactorGlowRings(300);

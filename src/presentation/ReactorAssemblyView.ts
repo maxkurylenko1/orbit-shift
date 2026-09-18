@@ -5,7 +5,7 @@ import {
   calculateReactorRingRotation,
   createReactorGlowRings,
   getReactorAssemblyMetrics,
-} from './reactorVisual';
+} from './reactorGeometry';
 
 const BODY_DARK = 0x070d14;
 const BODY_MID = 0x111c29;
