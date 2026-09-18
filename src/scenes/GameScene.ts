@@ -8,7 +8,7 @@ import { Obstacle } from '../entities/Obstacle';
 import { Player, type OrbitLane } from '../entities/Player';
 import { getHudVisualMetrics, snapHudCoordinate } from '../presentation/hudVisual';
 import { getOrbitVisuals } from '../presentation/orbitVisual';
-import { ReactorAssemblyView } from '../presentation/ReactorAssemblyView';
+import { ReactorAssetView } from '../presentation/ReactorAssetView';
 import { BestScoreStore } from '../systems/BestScoreStore';
 import { CollisionSystem } from '../systems/CollisionSystem';
 import { ComboSystem } from '../systems/ComboSystem';
@@ -41,7 +41,7 @@ export class GameScene implements Scene {
   public readonly view = new Container();
 
   private readonly spaceBackground = new SpaceBackground();
-  private readonly reactorVisual = new ReactorAssemblyView();
+  private readonly reactorVisual = new ReactorAssetView();
   private readonly orbits = new Graphics();
   private readonly obstacleLayer = new Container();
   private readonly collectibleLayer = new Container();
