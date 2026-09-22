@@ -1,4 +1,6 @@
 export interface OrbitVisualMetrics {
+  innerRadius: number;
+  outerRadius: number;
   decorativeRadius: number;
   gameplayCoreWidth: number;
   gameplayGlowWidth: number;
@@ -13,7 +15,9 @@ export const getOrbitVisuals = (base: number): OrbitVisualMetrics => {
   const coreWidth = Math.max(1.2, safeBase * 0.0022);
 
   return {
-    decorativeRadius: safeBase * 0.365,
+    innerRadius: safeBase * 0.21,
+    outerRadius: safeBase * 0.325,
+    decorativeRadius: safeBase * 0.38,
     gameplayCoreWidth: coreWidth,
     gameplayGlowWidth: Math.max(coreWidth * 4.5, safeBase * 0.009),
     decorativeWidth: Math.max(1, safeBase * 0.0014),
