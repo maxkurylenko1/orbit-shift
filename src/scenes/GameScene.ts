@@ -27,8 +27,6 @@ const ORBIT_CORE_COLOR = 0x63efff;
 const HUD_COLOR = 0xe8f7ff;
 const MUTED_HUD_COLOR = 0x86a3b8;
 const HUD_FONT_FAMILY = ['Inter', 'Segoe UI', 'Arial', 'sans-serif'];
-const INNER_RADIUS_RATIO = 0.2;
-const OUTER_RADIUS_RATIO = 0.31;
 const MAX_OBSTACLES = 8;
 const HUD_PADDING_RATIO = 0.025;
 const MIN_HUD_PADDING = 16;
@@ -204,9 +202,9 @@ export class GameScene implements Scene {
     const base = Math.min(width, height);
     const centerX = width * 0.5;
     const centerY = height * 0.5;
-    const innerRadius = base * INNER_RADIUS_RATIO;
-    const outerRadius = base * OUTER_RADIUS_RATIO;
     const orbitVisuals = getOrbitVisuals(base);
+    const innerRadius = orbitVisuals.innerRadius;
+    const outerRadius = orbitVisuals.outerRadius;
     const hudVisuals = getHudVisualMetrics(base, window.devicePixelRatio || 1);
     const hudPadding = snapHudCoordinate(
       Math.max(MIN_HUD_PADDING, base * HUD_PADDING_RATIO),
