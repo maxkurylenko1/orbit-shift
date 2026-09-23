@@ -1,17 +1,18 @@
-import { Graphics } from 'pixi.js';
+import { Sprite } from 'pixi.js';
+import { getGameItemVisuals } from '../presentation/gameItemVisual';
 import type { OrbitLane } from './Player';
 
-const COLLECTIBLE_COLOR = 0xffd166;
-const COLLECTIBLE_SIZE_RATIO = 0.018;
-const MIN_COLLECTIBLE_SIZE = 7;
+const SHARD_ASSET_URL = 'assets/shard.webp';
 
 export class Collectible {
-  public readonly view = new Graphics();
+  public readonly view = Sprite.from(SHARD_ASSET_URL);
 
   public constructor(
     public readonly lane: OrbitLane,
     public readonly angle: number,
-  ) {}
+  ) {
+    this.view.anchor.set(0.5);
+  }
 
   public resize(
     width: number,
@@ -20,16 +21,14 @@ export class Collectible {
     outerRadius: number,
   ): void {
     const base = Math.min(width, height);
-    const size = Math.max(MIN_COLLECTIBLE_SIZE, base * COLLECTIBLE_SIZE_RATIO);
+    const size = getGameItemVisuals(base).shard;
     const radius = this.lane === 'inner' ? innerRadius : outerRadius;
     const centerX = width * 0.5;
     const centerY = height * 0.5;
 
-    this.view
-      .clear()
-      .rect(-size * 0.5, -size * 0.5, size, size)
-      .fill({ color: COLLECTIBLE_COLOR });
-    this.view.rotation = Math.PI * 0.25;
+    this.view.width = size;
+    this.view.height = size;
+    this.view.rotation = this.angle + Math.PI * 0.5;
     this.view.position.set(
       centerX + Math.cos(this.angle) * radius,
       centerY + Math.sin(this.angle) * radius,

@@ -11,6 +11,8 @@ const VISUAL_ASSETS = [
   'assets/space-background.webp',
   'assets/reactor.webp',
   'assets/player.webp',
+  'assets/obstacle.webp',
+  'assets/shard.webp',
 ] as const;
 
 export class Game {

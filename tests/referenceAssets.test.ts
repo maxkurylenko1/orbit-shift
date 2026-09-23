@@ -6,6 +6,8 @@ const assets = [
   { path: '../public/assets/space-background.webp', minBytes: 50_000 },
   { path: '../public/assets/reactor.webp', minBytes: 50_000 },
   { path: '../public/assets/player.webp', minBytes: 10_000 },
+  { path: '../public/assets/obstacle.webp', minBytes: 30_000 },
+  { path: '../public/assets/shard.webp', minBytes: 30_000 },
 ] as const;
 
 test('reference-art assets are committed as nontrivial WebP binaries', () => {

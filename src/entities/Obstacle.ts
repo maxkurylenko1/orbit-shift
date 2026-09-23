@@ -1,18 +1,18 @@
-import { Graphics } from 'pixi.js';
+import { Sprite } from 'pixi.js';
+import { getGameItemVisuals } from '../presentation/gameItemVisual';
 import type { OrbitLane } from './Player';
 
-const HAZARD_COLOR = 0xff3d72;
-const OBSTACLE_SIZE_RATIO = 0.026;
-const MIN_OBSTACLE_SIZE = 8;
+const OBSTACLE_ASSET_URL = 'assets/obstacle.webp';
 
 export class Obstacle {
-  public readonly view = new Graphics();
+  public readonly view = Sprite.from(OBSTACLE_ASSET_URL);
 
   public constructor(
     public readonly lane: OrbitLane,
     public readonly angle: number,
     public remainingTravelRadians: number,
   ) {
+    this.view.anchor.set(0.5);
     this.view.rotation = Math.PI / 4;
   }
 
@@ -23,16 +23,13 @@ export class Obstacle {
     outerRadius: number,
   ): void {
     const base = Math.min(width, height);
-    const size = Math.max(MIN_OBSTACLE_SIZE, base * OBSTACLE_SIZE_RATIO);
+    const size = getGameItemVisuals(base).obstacle;
     const radius = this.lane === 'inner' ? innerRadius : outerRadius;
     const centerX = width * 0.5;
     const centerY = height * 0.5;
 
-    this.view
-      .clear()
-      .rect(-size * 0.5, -size * 0.5, size, size)
-      .fill({ color: HAZARD_COLOR });
-
+    this.view.width = size;
+    this.view.height = size;
     this.view.position.set(
       centerX + Math.cos(this.angle) * radius,
       centerY + Math.sin(this.angle) * radius,
