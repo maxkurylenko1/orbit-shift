@@ -8,7 +8,7 @@ const approvedAssets = {
   'reactor.webp': 'e8a7a64db24dc0a70440b1deab1a58422302de76',
   'player-simple.webp': '07623830073623ac4b944f87f0772f525da115fd',
   'obstacle.webp': 'd62fe3d2e91f1452d4221e3a25b7b073fdf38dd8',
-  'shard.webp': 'f93a80e1d3ecac9a934135931160c1d2097c50ce',
+  'shard.webp': '0213be521b12aba4b967e25041fb68a87c2b9b1e',
 } as const;
 
 for (const [name, expectedSha] of Object.entries(approvedAssets)) {
