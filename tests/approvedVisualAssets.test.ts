@@ -7,7 +7,7 @@ const approvedAssets = {
   'space-background.webp': '9c96bdbba81444760ec13ddc3e3fdc1a9341dbcc',
   'reactor.webp': 'e8a7a64db24dc0a70440b1deab1a58422302de76',
   'player-simple.webp': '07623830073623ac4b944f87f0772f525da115fd',
-  'obstacle.webp': 'a6f54eb4a75f324e8c98df91bda5817882018cf9',
+  'obstacle.webp': '8ab27cdc8137026ec3316999a8eea008039d5ad2',
   'shard.webp': '0213be521b12aba4b967e25041fb68a87c2b9b1e',
 } as const;
 
