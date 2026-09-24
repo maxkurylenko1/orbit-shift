@@ -10,7 +10,7 @@ const MAX_DEVICE_PIXEL_RATIO = 2;
 const VISUAL_ASSETS = [
   'assets/space-background.webp',
   'assets/reactor.webp',
-  'assets/player.webp',
+  'assets/player-simple.webp',
   'assets/obstacle.webp',
   'assets/shard.webp',
 ] as const;

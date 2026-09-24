@@ -8,7 +8,7 @@ import { calculatePlayerVisualRotation } from '../utils/playerVisual';
 
 export type OrbitLane = 'inner' | 'outer';
 
-const PLAYER_ASSET_URL = 'assets/player.webp';
+const PLAYER_ASSET_URL = 'assets/player-simple.webp';
 const LANE_SWITCH_DURATION = 0.14;
 const INITIAL_LANE: OrbitLane = 'outer';
 const INITIAL_ANGLE = -Math.PI / 2;
