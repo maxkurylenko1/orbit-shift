@@ -54,6 +54,7 @@ export class Game {
     this.sceneManager = new SceneManager(this.app.stage);
     this.app.ticker.add(this.handleTick);
     window.addEventListener('resize', this.handleResize);
+    window.visualViewport?.addEventListener('resize', this.handleResize);
 
     const showGameScene = (): void => {
       if (!this.inputManager) {
@@ -89,6 +90,7 @@ export class Game {
 
   public destroy(): void {
     window.removeEventListener('resize', this.handleResize);
+    window.visualViewport?.removeEventListener('resize', this.handleResize);
     this.app.ticker.remove(this.handleTick);
     this.sceneManager?.destroy();
     this.sceneManager = null;
