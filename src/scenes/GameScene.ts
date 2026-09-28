@@ -17,6 +17,10 @@ import { ComboSystem } from '../systems/ComboSystem';
 import { CountdownSystem } from '../systems/CountdownSystem';
 import { DifficultySystem } from '../systems/DifficultySystem';
 import {
+  findSafeCollectiblePlacement,
+  resolveSafeObstacleLane,
+} from '../systems/gameplaySafety';
+import {
   advanceObstacleTravelBudget,
   createObstacleTravelBudget,
 } from '../systems/obstacleLifetime';
@@ -412,8 +416,20 @@ export class GameScene implements Scene {
 
     this.clearCollectibles();
 
-    const angle = (this.player.angle + COLLECTIBLE_LEAD_ANGLE) % TAU;
-    const collectible = new Collectible(this.nextCollectibleLane, angle);
+    const baseAngle = (this.player.angle + COLLECTIBLE_LEAD_ANGLE) % TAU;
+    const placement = findSafeCollectiblePlacement(
+      this.nextCollectibleLane,
+      baseAngle,
+      this.obstacles,
+    );
+
+    if (!placement) {
+      this.nextCollectibleLane =
+        this.nextCollectibleLane === 'outer' ? 'inner' : 'outer';
+      return;
+    }
+
+    const collectible = new Collectible(placement.lane, placement.angle);
     collectible.resize(
       this.viewportWidth,
       this.viewportHeight,
@@ -423,7 +439,8 @@ export class GameScene implements Scene {
 
     this.collectibles.push(collectible);
     this.collectibleLayer.addChild(collectible.view);
-    this.nextCollectibleLane = this.nextCollectibleLane === 'outer' ? 'inner' : 'outer';
+    this.nextCollectibleLane =
+      placement.lane === 'outer' ? 'inner' : 'outer';
   }
 
   private collectTouchedShard(): void {
@@ -490,6 +507,17 @@ export class GameScene implements Scene {
   }
 
   private spawnObstacle(lane: OrbitLane, angle: number): void {
+    const safeLane = resolveSafeObstacleLane(
+      lane,
+      angle,
+      this.obstacles,
+      this.collectibles,
+    );
+
+    if (!safeLane) {
+      return;
+    }
+
     if (this.obstacles.length >= MAX_OBSTACLES) {
       const oldest = this.obstacles.shift();
 
@@ -500,7 +528,7 @@ export class GameScene implements Scene {
     }
 
     const obstacle = new Obstacle(
-      lane,
+      safeLane,
       angle,
       createObstacleTravelBudget(this.player.angle, angle),
     );

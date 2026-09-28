@@ -1,11 +1,15 @@
 const BASE_PLAYER_ANGULAR_SPEED = 1.2;
-const MAX_PLAYER_ANGULAR_SPEED = 2;
-const BASE_SPAWN_INTERVAL_SECONDS = 1.75;
-const MIN_SPAWN_INTERVAL_SECONDS = 0.9;
-const DIFFICULTY_RAMP_SECONDS = 60;
+const MAX_PLAYER_ANGULAR_SPEED = 1.95;
+const BASE_SPAWN_INTERVAL_SECONDS = 1.8;
+const MIN_SPAWN_INTERVAL_SECONDS = 0.95;
+const INTRO_HOLD_SECONDS = 6;
+const DIFFICULTY_RAMP_SECONDS = 72;
 
 const lerp = (from: number, to: number, progress: number): number =>
   from + (to - from) * progress;
+
+const smoothstep = (progress: number): number =>
+  progress * progress * (3 - 2 * progress);
 
 export class DifficultySystem {
   public playerAngularSpeed = BASE_PLAYER_ANGULAR_SPEED;
@@ -17,10 +21,12 @@ export class DifficultySystem {
   }
 
   public update(elapsedSeconds: number): void {
-    const progress = Math.min(
+    const rampElapsed = Math.max(0, elapsedSeconds - INTRO_HOLD_SECONDS);
+    const linearProgress = Math.min(
       1,
-      Math.max(0, elapsedSeconds) / DIFFICULTY_RAMP_SECONDS,
+      rampElapsed / DIFFICULTY_RAMP_SECONDS,
     );
+    const progress = smoothstep(linearProgress);
 
     this.playerAngularSpeed = lerp(
       BASE_PLAYER_ANGULAR_SPEED,
