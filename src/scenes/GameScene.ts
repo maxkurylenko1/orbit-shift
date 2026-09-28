@@ -4,6 +4,7 @@ import { SpaceBackground } from '../background/SpaceBackground';
 import {
   getHudLayoutMetrics,
   getResponsiveViewportMetrics,
+  readSafeAreaInsets,
 } from '../config/responsiveLayout';
 import { calculateVisualSizes } from '../config/visualSizing';
 import type { InputManager } from '../core/InputManager';
@@ -258,7 +259,11 @@ export class GameScene implements Scene {
   }
 
   public resize(width: number, height: number): void {
-    const viewport = getResponsiveViewportMetrics(width, height);
+    const viewport = getResponsiveViewportMetrics(
+      width,
+      height,
+      readSafeAreaInsets(),
+    );
     const base = viewport.visualBase;
     const centerX = viewport.centerX;
     const centerY = viewport.centerY;

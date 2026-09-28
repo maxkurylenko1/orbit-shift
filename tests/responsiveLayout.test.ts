@@ -43,3 +43,16 @@ test('desktop HUD keeps combo on the top row', () => {
   assert.equal(layout.comboY, layout.scoreY);
   assert.ok(layout.bestY > layout.scoreY);
 });
+
+test('notched phones keep HUD outside safe-area insets', () => {
+  const phone = getResponsiveViewportMetrics(
+    390,
+    844,
+    { top: 47, right: 0, bottom: 34, left: 0 },
+  );
+  const layout = getHudLayoutMetrics(phone, 20);
+
+  assert.ok(layout.scoreY >= 57);
+  assert.equal(layout.timeY, layout.scoreY);
+  assert.ok(layout.bestY > layout.scoreY);
+});
