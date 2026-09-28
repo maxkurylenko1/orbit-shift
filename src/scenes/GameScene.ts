@@ -43,6 +43,8 @@ const COLLECTIBLE_SPAWN_INTERVAL_SECONDS = 6;
 const COLLECTIBLE_LEAD_ANGLE = 1.35;
 const COLLECTIBLE_SCORE_BONUS = 50;
 const GAME_OVER_REVEAL_DELAY_SECONDS = 0.22;
+const COUNTDOWN_BACKDROP_COLOR = 0x020712;
+const COUNTDOWN_ACCENT_COLOR = 0x42e8ff;
 const TAU = Math.PI * 2;
 
 export class GameScene implements Scene {
@@ -111,9 +113,15 @@ export class GameScene implements Scene {
       letterSpacing: 0.5,
     },
   });
+  private readonly countdownBackdrop = new Graphics();
   private readonly countdownText = new Text({
     text: '3',
-    style: { fill: HUD_COLOR, fontFamily: 'Arial', fontSize: 64, fontWeight: '700' },
+    style: {
+      fill: HUD_COLOR,
+      fontFamily: 'Arial',
+      fontSize: 64,
+      fontWeight: '700',
+    },
   });
   private readonly gameOverOverlay = new GameOverOverlay();
 
@@ -177,6 +185,7 @@ export class GameScene implements Scene {
       this.bestText,
       this.comboText,
       this.timeText,
+      this.countdownBackdrop,
       this.countdownText,
       this.gameOverOverlay.view,
     );
@@ -225,7 +234,9 @@ export class GameScene implements Scene {
       }
 
       this.countdownText.text = this.countdownSystem.label;
-      this.countdownText.visible = !this.countdownSystem.finished;
+      const countdownVisible = !this.countdownSystem.finished;
+      this.countdownText.visible = countdownVisible;
+      this.countdownBackdrop.visible = countdownVisible;
       return;
     }
 
@@ -387,10 +398,41 @@ export class GameScene implements Scene {
       snapHudCoordinate(hudLayout.timeX),
       snapHudCoordinate(hudLayout.timeY),
     );
-    this.countdownText.style.fontSize = Math.min(
+    const countdownFontSize = Math.min(
       96,
       Math.max(48, base * 0.1),
     );
+    const countdownRadius = Math.max(
+      42,
+      countdownFontSize * 0.78,
+    );
+    const countdownRingWidth = Math.max(1.5, base * 0.0022);
+
+    this.countdownBackdrop
+      .clear()
+      .circle(centerX, centerY, countdownRadius * 1.16)
+      .fill({
+        color: COUNTDOWN_BACKDROP_COLOR,
+        alpha: 0.26,
+      })
+      .circle(centerX, centerY, countdownRadius)
+      .fill({
+        color: COUNTDOWN_BACKDROP_COLOR,
+        alpha: 0.86,
+      })
+      .stroke({
+        color: COUNTDOWN_ACCENT_COLOR,
+        alpha: 0.62,
+        width: countdownRingWidth,
+      })
+      .circle(centerX, centerY, countdownRadius * 0.78)
+      .stroke({
+        color: COUNTDOWN_ACCENT_COLOR,
+        alpha: 0.12,
+        width: Math.max(1, countdownRingWidth * 0.6),
+      });
+
+    this.countdownText.style.fontSize = countdownFontSize;
     this.countdownText.position.set(centerX, centerY);
     this.gameOverOverlay.resize(viewport.width, viewport.height);
 
@@ -437,6 +479,7 @@ export class GameScene implements Scene {
     this.player.angularSpeed = this.difficultySystem.playerAngularSpeed;
     this.countdownText.text = this.countdownSystem.label;
     this.countdownText.visible = true;
+    this.countdownBackdrop.visible = true;
     this.gameOverOverlay.hide();
     this.updateHud();
   }
