@@ -7,12 +7,18 @@ import {
 const MASTER_GAIN = 0.5;
 const AMBIENT_GAIN = 0.025;
 const SILENCE_GAIN = 0.0001;
+const MUTE_RAMP_SECONDS = 0.035;
 
 export class GameAudio {
   private context: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private ambientGain: GainNode | null = null;
   private ambientOscillators: OscillatorNode[] = [];
+  private muted = false;
+
+  public get isMuted(): boolean {
+    return this.muted;
+  }
 
   public unlock(): void {
     const context = this.ensureContext();
@@ -22,6 +28,17 @@ export class GameAudio {
     }
 
     void context.resume().catch(() => undefined);
+  }
+
+  public setMuted(muted: boolean): void {
+    this.muted = muted;
+    this.applyMasterGain();
+  }
+
+  public toggleMuted(): boolean {
+    this.setMuted(!this.muted);
+
+    return this.muted;
   }
 
   public startAmbient(): void {
@@ -148,7 +165,7 @@ export class GameAudio {
       const context = new AudioContext();
       const masterGain = context.createGain();
 
-      masterGain.gain.value = MASTER_GAIN;
+      masterGain.gain.value = this.muted ? 0 : MASTER_GAIN;
       masterGain.connect(context.destination);
 
       this.context = context;
@@ -158,6 +175,25 @@ export class GameAudio {
     } catch {
       return null;
     }
+  }
+
+  private applyMasterGain(): void {
+    const context = this.context;
+    const masterGain = this.masterGain;
+
+    if (!context || !masterGain) {
+      return;
+    }
+
+    const target = this.muted ? 0 : MASTER_GAIN;
+    const now = context.currentTime;
+
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setTargetAtTime(
+      target,
+      now,
+      MUTE_RAMP_SECONDS,
+    );
   }
 
   private playTone(

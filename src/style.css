@@ -29,6 +29,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+button {
+  font: inherit;
+}
+
 #app {
   position: fixed;
   top: 0;
@@ -49,4 +53,55 @@ body {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.audio-toggle {
+  position: absolute;
+  right: max(16px, calc(var(--safe-area-right) + 10px));
+  bottom: max(16px, calc(var(--safe-area-bottom) + 10px));
+  z-index: 10;
+  min-width: 96px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(66, 232, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(5, 12, 24, 0.72);
+  color: rgba(232, 247, 255, 0.78);
+  font-family: Inter, 'Segoe UI', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  touch-action: manipulation;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+}
+
+.audio-toggle:hover {
+  border-color: rgba(66, 232, 255, 0.62);
+  background: rgba(8, 22, 38, 0.88);
+  color: #e8f7ff;
+}
+
+.audio-toggle:active {
+  transform: scale(0.97);
+}
+
+.audio-toggle:focus-visible {
+  outline: 2px solid #42e8ff;
+  outline-offset: 3px;
+}
+
+@media (max-width: 520px) {
+  .audio-toggle {
+    min-width: 82px;
+    height: 34px;
+    padding: 0 11px;
+    font-size: 10px;
+  }
 }

@@ -3,6 +3,7 @@ import { GameAudio } from '../audio/GameAudio';
 import { BootScene } from '../scenes/BootScene';
 import { GameScene } from '../scenes/GameScene';
 import { MenuScene } from '../scenes/MenuScene';
+import { AudioToggle } from '../ui/AudioToggle';
 import { InputManager } from './InputManager';
 import { SceneManager } from './SceneManager';
 
@@ -21,6 +22,7 @@ export class Game {
   private readonly audio = new GameAudio();
   private sceneManager: SceneManager | null = null;
   private inputManager: InputManager | null = null;
+  private audioToggle: AudioToggle | null = null;
 
   private readonly handleResize = (): void => {
     if (!this.sceneManager) {
@@ -47,8 +49,14 @@ export class Game {
     await Assets.load([...VISUAL_ASSETS]);
 
     this.app.canvas.classList.add('game-canvas');
+    this.app.canvas.setAttribute('role', 'application');
+    this.app.canvas.setAttribute(
+      'aria-label',
+      'Orbit Shift arcade game',
+    );
     host.appendChild(this.app.canvas);
 
+    this.audioToggle = new AudioToggle(host, this.audio);
     this.inputManager = new InputManager(this.app.canvas);
     this.inputManager.start();
     this.sceneManager = new SceneManager(this.app.stage);
@@ -96,6 +104,8 @@ export class Game {
     this.sceneManager = null;
     this.inputManager?.destroy();
     this.inputManager = null;
+    this.audioToggle?.destroy();
+    this.audioToggle = null;
     this.audio.destroy();
     this.app.destroy({ removeView: true }, { children: true });
   }
