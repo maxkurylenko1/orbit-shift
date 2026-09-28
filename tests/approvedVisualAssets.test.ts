@@ -5,10 +5,10 @@ import test from 'node:test';
 
 const approvedAssets = {
   'space-background.webp': '9c96bdbba81444760ec13ddc3e3fdc1a9341dbcc',
-  'reactor.webp': '1e2ab15f7a80ba469da257df3503cd266aa0436b',
+  'reactor.webp': 'd358247bfb4dc631fbcd8b3e6a775512497a23e1',
   'player-simple.webp': '07623830073623ac4b944f87f0772f525da115fd',
-  'obstacle.webp': '8ab27cdc8137026ec3316999a8eea008039d5ad2',
-  'shard.webp': '0213be521b12aba4b967e25041fb68a87c2b9b1e',
+  'obstacle.webp': '506bc4c919e59e6aa14f75c00ac177cfaebcef0f',
+  'shard.webp': '702e56e667622e8b590dab54a45455f7031a9f73',
 } as const;
 
 for (const [name, expectedSha] of Object.entries(approvedAssets)) {
