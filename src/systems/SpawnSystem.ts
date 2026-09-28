@@ -21,7 +21,11 @@ export class SpawnSystem {
 
     this.elapsedSeconds = 0;
     this.runLeadAngle = SPAWN_LEAD_ANGLE + variation.leadAngleOffset;
-    this.patternSystem.reset(variation.patternIndex, variation.phaseRatio);
+    this.patternSystem.reset(
+      variation.patternIndex,
+      variation.phaseRatio,
+      0,
+    );
   }
 
   public update(
@@ -29,7 +33,10 @@ export class SpawnSystem {
     playerAngle: number,
     intervalSeconds: number,
     playerAngularSpeed: number,
+    patternTier: number,
   ): void {
+    this.patternSystem.setTier(patternTier);
+
     const step = this.patternSystem.currentStep();
     const baseInterval = Math.max(MIN_INTERVAL_SECONDS, intervalSeconds);
     const stepInterval = getSafeSpawnInterval(

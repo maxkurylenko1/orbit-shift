@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  getAmbientProfile,
   getCountdownFrequency,
   getPickupFrequency,
   getSwitchToneProfile,
@@ -31,4 +32,17 @@ test('countdown notes rise toward GO', () => {
   assert.ok(one !== null && two !== null && one > two);
   assert.ok(go !== null && one !== null && go > one);
   assert.equal(getCountdownFrequency(''), null);
+});
+
+test('ambient profile gains pulse, brightness, and motion with pressure', () => {
+  const calm = getAmbientProfile(0, 0);
+  const intense = getAmbientProfile(1, 0);
+  const surge = getAmbientProfile(1, 1);
+
+  assert.ok(intense.filterFrequency > calm.filterFrequency);
+  assert.ok(intense.pulseRate > calm.pulseRate);
+  assert.ok(intense.pulseDepth > calm.pulseDepth);
+  assert.ok(intense.gain > calm.gain);
+  assert.ok(surge.pulseRate > intense.pulseRate);
+  assert.ok(surge.filterFrequency > intense.filterFrequency);
 });

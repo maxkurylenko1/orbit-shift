@@ -125,8 +125,11 @@ export class GameScene implements Scene {
   private collectibleSpawnElapsed = 0;
   private nextCollectibleLane: OrbitLane = 'outer';
   private bestScore = 0;
+  private previousBestScore = 0;
+  private runWasNewBest = false;
   private gameOverDelayRemaining = 0;
   private lastCountdownLabel = '';
+  private lastSurgeIndex = -1;
   private unsubscribeInput: (() => void) | null = null;
 
   private readonly handleAction = (): void => {
@@ -204,6 +207,8 @@ export class GameScene implements Scene {
             this.scoreSystem.score,
             this.bestScore,
             this.scoreSystem.elapsedSeconds,
+            this.runWasNewBest,
+            this.previousBestScore,
           );
         }
       }
@@ -228,16 +233,33 @@ export class GameScene implements Scene {
     this.difficultySystem.update(this.scoreSystem.elapsedSeconds);
     this.player.angularSpeed = this.difficultySystem.playerAngularSpeed;
 
+    this.audio.setAmbientIntensity(
+      this.difficultySystem.intensity,
+      this.difficultySystem.surgeStrength,
+    );
+
+    if (
+      this.difficultySystem.surgeIndex >= 0 &&
+      this.difficultySystem.surgeIndex !== this.lastSurgeIndex
+    ) {
+      this.lastSurgeIndex = this.difficultySystem.surgeIndex;
+      this.audio.playSurge(this.difficultySystem.patternTier);
+      this.reactorVisual.pulse(0.5);
+    }
+
     this.player.update(deltaSeconds);
     this.spawnSystem.update(
       deltaSeconds,
       this.player.angle,
       this.difficultySystem.spawnIntervalSeconds,
       this.player.angularSpeed,
+      this.difficultySystem.patternTier,
     );
 
     if (this.collisionSystem.hasPlayerCollision(this.player, this.obstacles)) {
       this.player.alive = false;
+      this.previousBestScore = this.bestScore;
+      this.runWasNewBest = this.scoreSystem.score > this.bestScore;
       this.bestScore = this.bestScoreStore.submit(this.scoreSystem.score);
       this.gameOverDelayRemaining = GAME_OVER_REVEAL_DELAY_SECONDS;
 
@@ -399,6 +421,10 @@ export class GameScene implements Scene {
     this.comboSystem.resetChain();
     this.countdownSystem.reset();
     this.difficultySystem.reset();
+    this.previousBestScore = this.bestScore;
+    this.runWasNewBest = false;
+    this.lastSurgeIndex = -1;
+    this.audio.setAmbientIntensity(0, 0);
     this.lastCountdownLabel = this.countdownSystem.label;
     this.audio.playCountdown(this.lastCountdownLabel);
     this.collectibleSpawnElapsed = 0;
@@ -417,7 +443,13 @@ export class GameScene implements Scene {
 
   private updateHud(): void {
     this.scoreText.text = `SCORE ${this.scoreSystem.score}`;
-    this.bestText.text = `BEST ${Math.max(this.bestScore, this.scoreSystem.score)}`;
+
+    if (this.bestScore > 0 && this.scoreSystem.score > this.bestScore) {
+      this.bestText.text = `NEW BEST +${this.scoreSystem.score - this.bestScore}`;
+    } else {
+      this.bestText.text = `BEST ${this.bestScore}`;
+    }
+
     this.comboText.visible = this.comboSystem.streak > 1;
     this.comboText.text = `COMBO x${this.comboSystem.multiplier}`;
     this.timeText.text = `${this.scoreSystem.elapsedSeconds.toFixed(1)}s`;

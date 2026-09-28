@@ -1,20 +1,30 @@
 import {
+  getAmbientProfile,
   getCountdownFrequency,
   getPickupFrequency,
   getSwitchToneProfile,
 } from './audioDesign';
 
 const MASTER_GAIN = 0.5;
-const AMBIENT_GAIN = 0.025;
 const SILENCE_GAIN = 0.0001;
 const MUTE_RAMP_SECONDS = 0.035;
+const AMBIENT_SMOOTHING_SECONDS = 0.18;
 
 export class GameAudio {
   private context: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private ambientGain: GainNode | null = null;
+  private ambientFilter: BiquadFilterNode | null = null;
+  private ambientBase: OscillatorNode | null = null;
+  private ambientHarmonic: OscillatorNode | null = null;
+  private ambientPulse: OscillatorNode | null = null;
+  private ambientPulseDepth: GainNode | null = null;
+  private ambientDrift: OscillatorNode | null = null;
+  private ambientDriftDepth: GainNode | null = null;
   private ambientOscillators: OscillatorNode[] = [];
   private muted = false;
+  private lastAmbientIntensity = -1;
+  private lastAmbientSurge = -1;
 
   public get isMuted(): boolean {
     return this.muted;
@@ -49,31 +59,141 @@ export class GameAudio {
       return;
     }
 
+    const profile = getAmbientProfile(0, 0);
     const ambientGain = context.createGain();
     const filter = context.createBiquadFilter();
     const base = context.createOscillator();
+    const baseLevel = context.createGain();
     const harmonic = context.createOscillator();
+    const harmonicLevel = context.createGain();
+    const pulse = context.createOscillator();
+    const pulseDepth = context.createGain();
+    const drift = context.createOscillator();
+    const driftDepth = context.createGain();
 
-    ambientGain.gain.value = AMBIENT_GAIN;
+    ambientGain.gain.value = profile.gain;
+
     filter.type = 'lowpass';
-    filter.frequency.value = 210;
-    filter.Q.value = 0.65;
+    filter.frequency.value = profile.filterFrequency;
+    filter.Q.value = 0.8;
 
     base.type = 'sine';
-    base.frequency.value = 46;
-    harmonic.type = 'triangle';
-    harmonic.frequency.value = 92;
+    base.frequency.value = profile.baseFrequency;
+    baseLevel.gain.value = 0.92;
 
-    base.connect(filter);
-    harmonic.connect(filter);
+    harmonic.type = 'triangle';
+    harmonic.frequency.value = profile.harmonicFrequency;
+    harmonicLevel.gain.value = 0.2;
+
+    pulse.type = 'sine';
+    pulse.frequency.value = profile.pulseRate;
+    pulseDepth.gain.value = profile.pulseDepth;
+
+    drift.type = 'sine';
+    drift.frequency.value = 0.085;
+    driftDepth.gain.value = 55;
+
+    base.connect(baseLevel);
+    baseLevel.connect(filter);
+    harmonic.connect(harmonicLevel);
+    harmonicLevel.connect(filter);
     filter.connect(ambientGain);
     ambientGain.connect(masterGain);
 
+    pulse.connect(pulseDepth);
+    pulseDepth.connect(ambientGain.gain);
+
+    drift.connect(driftDepth);
+    driftDepth.connect(filter.frequency);
+
     base.start();
     harmonic.start();
+    pulse.start();
+    drift.start();
 
     this.ambientGain = ambientGain;
-    this.ambientOscillators = [base, harmonic];
+    this.ambientFilter = filter;
+    this.ambientBase = base;
+    this.ambientHarmonic = harmonic;
+    this.ambientPulse = pulse;
+    this.ambientPulseDepth = pulseDepth;
+    this.ambientDrift = drift;
+    this.ambientDriftDepth = driftDepth;
+    this.ambientOscillators = [base, harmonic, pulse, drift];
+    this.lastAmbientIntensity = 0;
+    this.lastAmbientSurge = 0;
+  }
+
+  public setAmbientIntensity(
+    intensity: number,
+    surgeStrength: number,
+  ): void {
+    const context = this.context;
+    const ambientGain = this.ambientGain;
+    const filter = this.ambientFilter;
+    const base = this.ambientBase;
+    const harmonic = this.ambientHarmonic;
+    const pulse = this.ambientPulse;
+    const pulseDepth = this.ambientPulseDepth;
+
+    if (
+      !context ||
+      !ambientGain ||
+      !filter ||
+      !base ||
+      !harmonic ||
+      !pulse ||
+      !pulseDepth
+    ) {
+      return;
+    }
+
+    const safeIntensity = Math.max(0, Math.min(1, intensity));
+    const safeSurge = Math.max(0, Math.min(1, surgeStrength));
+
+    if (
+      Math.abs(safeIntensity - this.lastAmbientIntensity) < 0.015 &&
+      Math.abs(safeSurge - this.lastAmbientSurge) < 0.02
+    ) {
+      return;
+    }
+
+    this.lastAmbientIntensity = safeIntensity;
+    this.lastAmbientSurge = safeSurge;
+
+    const profile = getAmbientProfile(safeIntensity, safeSurge);
+    const now = context.currentTime;
+
+    ambientGain.gain.setTargetAtTime(
+      profile.gain,
+      now,
+      AMBIENT_SMOOTHING_SECONDS,
+    );
+    filter.frequency.setTargetAtTime(
+      profile.filterFrequency,
+      now,
+      AMBIENT_SMOOTHING_SECONDS,
+    );
+    base.frequency.setTargetAtTime(
+      profile.baseFrequency,
+      now,
+      AMBIENT_SMOOTHING_SECONDS,
+    );
+    harmonic.frequency.setTargetAtTime(
+      profile.harmonicFrequency,
+      now,
+      AMBIENT_SMOOTHING_SECONDS,
+    );
+    pulse.frequency.setTargetAtTime(
+      profile.pulseRate,
+      now,
+      AMBIENT_SMOOTHING_SECONDS,
+    );
+    pulseDepth.gain.setTargetAtTime(
+      profile.pulseDepth,
+      now,
+      AMBIENT_SMOOTHING_SECONDS,
+    );
   }
 
   public stopAmbient(): void {
@@ -88,7 +208,19 @@ export class GameAudio {
 
     this.ambientOscillators.length = 0;
     this.ambientGain?.disconnect();
+    this.ambientFilter?.disconnect();
+    this.ambientPulseDepth?.disconnect();
+    this.ambientDriftDepth?.disconnect();
     this.ambientGain = null;
+    this.ambientFilter = null;
+    this.ambientBase = null;
+    this.ambientHarmonic = null;
+    this.ambientPulse = null;
+    this.ambientPulseDepth = null;
+    this.ambientDrift = null;
+    this.ambientDriftDepth = null;
+    this.lastAmbientIntensity = -1;
+    this.lastAmbientSurge = -1;
   }
 
   public playSwitch(): void {
@@ -139,6 +271,14 @@ export class GameAudio {
       isGo ? 0.1 : 0.055,
       isGo ? 'triangle' : 'sine',
     );
+  }
+
+  public playSurge(tier: number): void {
+    const safeTier = Math.max(0, Math.min(4, Math.floor(tier)));
+    const base = 210 + safeTier * 28;
+
+    this.playSweep(base, base * 1.85, 0.2, 0.075, 'triangle');
+    this.playTone(base * 0.5, 0.18, 0.055, 'sine', 0.025);
   }
 
   public destroy(): void {

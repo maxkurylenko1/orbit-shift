@@ -83,9 +83,24 @@ export class GameOverOverlay {
     this.hide();
   }
 
-  public show(score: number, bestScore: number, elapsedSeconds: number): void {
+  public show(
+    score: number,
+    bestScore: number,
+    elapsedSeconds: number,
+    isNewBest = false,
+    previousBestScore = bestScore,
+  ): void {
+    this.eyebrow.text = isNewBest ? 'NEW RECORD' : 'RUN COMPLETE';
     this.result.text = `SCORE ${score} · ${elapsedSeconds.toFixed(1)}s`;
-    this.best.text = `BEST · ${bestScore}`;
+
+    if (isNewBest) {
+      this.best.text = `NEW BEST · ${bestScore}`;
+    } else if (previousBestScore > score) {
+      this.best.text = `TO BEST · ${previousBestScore - score}`;
+    } else {
+      this.best.text = `BEST · ${bestScore}`;
+    }
+
     this.view.visible = true;
   }
 
