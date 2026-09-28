@@ -2,7 +2,6 @@ import type { OrbitLane } from '../entities/Player';
 
 const TAU = Math.PI * 2;
 const DUAL_LANE_BLOCKADE_ANGLE = 0.34;
-const SAME_LANE_STACK_ANGLE = 0.22;
 const COLLECTIBLE_CLEARANCE_ANGLE = 0.4;
 const COLLECTIBLE_ANGLE_OFFSETS = [0, 0.46, -0.28, 0.82] as const;
 
@@ -62,17 +61,6 @@ export const resolveSafeObstacleLane = (
         lane,
         angle,
         COLLECTIBLE_CLEARANCE_ANGLE,
-      )
-    ) {
-      continue;
-    }
-
-    if (
-      hasNearbyObject(
-        obstacles,
-        lane,
-        angle,
-        SAME_LANE_STACK_ANGLE,
       )
     ) {
       continue;
