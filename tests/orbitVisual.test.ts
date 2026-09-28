@@ -12,3 +12,7 @@ test('decorative ring sits outside enlarged gameplay orbits', () => {
   assert.ok(visuals.decorativeAlpha < 0.2);
   assert.ok(visuals.gameplayGlowWidth > visuals.gameplayCoreWidth);
 });
+
+test('orbit geometry caps on very large displays', () => {
+  assert.deepEqual(getOrbitVisuals(4000), getOrbitVisuals(1200));
+});

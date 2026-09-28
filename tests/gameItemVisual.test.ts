@@ -10,3 +10,7 @@ test('small screens retain readable items without oversized sprites', () => {
   assert.deepEqual(getGameItemVisuals(320), { obstacle: 22, shard: 18 });
   assert.deepEqual(getGameItemVisuals(-4), { obstacle: 22, shard: 18 });
 });
+
+test('ultrawide and 4K layouts cap item scale', () => {
+  assert.deepEqual(getGameItemVisuals(4000), getGameItemVisuals(1200));
+});

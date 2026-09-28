@@ -15,3 +15,11 @@ test('player trail stays visible without becoming a ribbon', () => {
   assert.ok(metrics.trailHeadAlpha <= 0.52);
   assert.ok(metrics.glowRadius > 40 && metrics.glowRadius < 70);
 });
+
+test('large screens cap authored sprite and trail scale', () => {
+  assert.deepEqual(calculateVisualSizes(4000), calculateVisualSizes(1200));
+  assert.deepEqual(
+    getPlayerPresentationMetrics(4000),
+    getPlayerPresentationMetrics(1200),
+  );
+});

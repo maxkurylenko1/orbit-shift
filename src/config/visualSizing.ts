@@ -1,3 +1,5 @@
+import { clampVisualBase } from './responsiveLayout';
+
 const PLAYER_VISUAL_RATIO = 0.092;
 const REACTOR_VISUAL_RATIO = 0.285;
 const MIN_PLAYER_VISUAL_SIZE = 30;
@@ -9,7 +11,7 @@ export interface VisualSizes {
 }
 
 export const calculateVisualSizes = (base: number): VisualSizes => {
-  const safeBase = Math.max(0, base);
+  const safeBase = clampVisualBase(base);
 
   return {
     player: Math.max(

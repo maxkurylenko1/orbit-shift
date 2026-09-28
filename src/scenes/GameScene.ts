@@ -1,6 +1,10 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import type { GameAudio } from '../audio/GameAudio';
 import { SpaceBackground } from '../background/SpaceBackground';
+import {
+  getHudLayoutMetrics,
+  getResponsiveViewportMetrics,
+} from '../config/responsiveLayout';
 import { calculateVisualSizes } from '../config/visualSizing';
 import type { InputManager } from '../core/InputManager';
 import type { Scene } from '../core/SceneManager';
@@ -34,8 +38,6 @@ const HUD_COLOR = 0xe8f7ff;
 const MUTED_HUD_COLOR = 0x86a3b8;
 const HUD_FONT_FAMILY = ['Inter', 'Segoe UI', 'Arial', 'sans-serif'];
 const MAX_OBSTACLES = 8;
-const HUD_PADDING_RATIO = 0.025;
-const MIN_HUD_PADDING = 16;
 const COLLECTIBLE_SPAWN_INTERVAL_SECONDS = 6;
 const COLLECTIBLE_LEAD_ANGLE = 1.35;
 const COLLECTIBLE_SCORE_BONUS = 50;
@@ -118,6 +120,7 @@ export class GameScene implements Scene {
   private viewportHeight = 0;
   private innerRadius = 0;
   private outerRadius = 0;
+  private visualBase = 1;
   private collectibleSpawnElapsed = 0;
   private nextCollectibleLane: OrbitLane = 'outer';
   private bestScore = 0;
@@ -237,11 +240,10 @@ export class GameScene implements Scene {
       this.bestScore = this.bestScoreStore.submit(this.scoreSystem.score);
       this.gameOverDelayRemaining = GAME_OVER_REVEAL_DELAY_SECONDS;
 
-      const base = Math.min(this.viewportWidth, this.viewportHeight);
       this.feedbackView.triggerCollision(
         this.player.view.x,
         this.player.view.y,
-        base,
+        this.visualBase,
       );
       this.reactorVisual.pulse(1);
       this.audio.playCollision();
@@ -256,22 +258,25 @@ export class GameScene implements Scene {
   }
 
   public resize(width: number, height: number): void {
-    const base = Math.min(width, height);
-    const centerX = width * 0.5;
-    const centerY = height * 0.5;
+    const viewport = getResponsiveViewportMetrics(width, height);
+    const base = viewport.visualBase;
+    const centerX = viewport.centerX;
+    const centerY = viewport.centerY;
     const orbitVisuals = getOrbitVisuals(base);
     const innerRadius = orbitVisuals.innerRadius;
     const outerRadius = orbitVisuals.outerRadius;
-    const hudVisuals = getHudVisualMetrics(base, window.devicePixelRatio || 1);
-    const hudPadding = snapHudCoordinate(
-      Math.max(MIN_HUD_PADDING, base * HUD_PADDING_RATIO),
+    const hudVisuals = getHudVisualMetrics(
+      base,
+      window.devicePixelRatio || 1,
     );
+    const hudLayout = getHudLayoutMetrics(viewport, hudVisuals.lineGap);
     const { reactor: reactorSize } = calculateVisualSizes(base);
 
-    this.viewportWidth = width;
-    this.viewportHeight = height;
+    this.viewportWidth = viewport.width;
+    this.viewportHeight = viewport.height;
     this.innerRadius = innerRadius;
     this.outerRadius = outerRadius;
+    this.visualBase = base;
 
     this.spaceBackground.resize(width, height);
     this.feedbackView.resize(width, height);
@@ -339,16 +344,28 @@ export class GameScene implements Scene {
     this.timeText.style.fontSize = hudVisuals.primaryFontSize;
     this.timeText.style.letterSpacing = hudVisuals.letterSpacing;
 
-    this.scoreText.position.set(hudPadding, hudPadding);
-    this.bestText.position.set(
-      hudPadding,
-      snapHudCoordinate(hudPadding + hudVisuals.lineGap),
+    this.scoreText.position.set(
+      snapHudCoordinate(hudLayout.scoreX),
+      snapHudCoordinate(hudLayout.scoreY),
     );
-    this.comboText.position.set(snapHudCoordinate(width * 0.5), hudPadding);
-    this.timeText.position.set(snapHudCoordinate(width - hudPadding), hudPadding);
-    this.countdownText.style.fontSize = Math.max(48, base * 0.1);
+    this.bestText.position.set(
+      snapHudCoordinate(hudLayout.bestX),
+      snapHudCoordinate(hudLayout.bestY),
+    );
+    this.comboText.position.set(
+      snapHudCoordinate(hudLayout.comboX),
+      snapHudCoordinate(hudLayout.comboY),
+    );
+    this.timeText.position.set(
+      snapHudCoordinate(hudLayout.timeX),
+      snapHudCoordinate(hudLayout.timeY),
+    );
+    this.countdownText.style.fontSize = Math.min(
+      96,
+      Math.max(48, base * 0.1),
+    );
     this.countdownText.position.set(centerX, centerY);
-    this.gameOverOverlay.resize(width, height);
+    this.gameOverOverlay.resize(viewport.width, viewport.height);
 
     for (const obstacle of this.obstacles) {
       obstacle.resize(width, height, innerRadius, outerRadius);
@@ -459,8 +476,11 @@ export class GameScene implements Scene {
     this.collectibleLayer.removeChild(collectible.view);
     collectible.destroy();
 
-    const base = Math.min(this.viewportWidth, this.viewportHeight);
-    this.feedbackView.triggerShardPickup(pickupX, pickupY, base);
+    this.feedbackView.triggerShardPickup(
+      pickupX,
+      pickupY,
+      this.visualBase,
+    );
     this.reactorVisual.pulse(0.65);
     this.comboSystem.recordCollect();
     this.audio.playPickup(this.comboSystem.multiplier);

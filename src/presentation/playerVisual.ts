@@ -1,3 +1,5 @@
+import { clampVisualBase } from '../config/responsiveLayout';
+
 export const PLAYER_TRAIL_POINT_COUNT = 30;
 
 export interface PlayerPresentationMetrics {
@@ -12,7 +14,7 @@ export interface PlayerPresentationMetrics {
 export const getPlayerPresentationMetrics = (
   base: number,
 ): PlayerPresentationMetrics => {
-  const safeBase = Math.max(1, base);
+  const safeBase = Math.max(1, clampVisualBase(base));
 
   return {
     trailPointCount: PLAYER_TRAIL_POINT_COUNT,

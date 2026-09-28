@@ -16,3 +16,10 @@ test('HUD coordinates snap to whole CSS pixels', () => {
   assert.equal(snapHudCoordinate(23.2), 23);
   assert.equal(snapHudCoordinate(23.7), 24);
 });
+
+test('HUD typography stops growing on ultrawide and 4K screens', () => {
+  assert.deepEqual(
+    getHudVisualMetrics(4000, 2),
+    getHudVisualMetrics(1200, 2),
+  );
+});

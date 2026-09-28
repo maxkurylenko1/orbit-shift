@@ -1,3 +1,5 @@
+import { clampVisualBase } from '../config/responsiveLayout';
+
 export interface HudVisualMetrics {
   primaryFontSize: number;
   secondaryFontSize: number;
@@ -10,7 +12,7 @@ export const getHudVisualMetrics = (
   base: number,
   devicePixelRatio: number,
 ): HudVisualMetrics => {
-  const safeBase = Math.max(1, base);
+  const safeBase = Math.max(1, clampVisualBase(base));
   const safeDpr = Number.isFinite(devicePixelRatio) ? devicePixelRatio : 1;
 
   return {

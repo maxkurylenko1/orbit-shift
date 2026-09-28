@@ -1,4 +1,5 @@
 import { Container, Graphics, Text } from 'pixi.js';
+import { getResponsiveViewportMetrics } from '../config/responsiveLayout';
 
 const OVERLAY_COLOR = 0x02040b;
 const OVERLAY_ALPHA = 0.72;
@@ -12,19 +13,39 @@ export class GameOverOverlay {
   private readonly dimmer = new Graphics();
   private readonly title = new Text({
     text: 'GAME OVER',
-    style: { fill: TITLE_COLOR, fontFamily: 'Arial', fontSize: 40, fontWeight: '700' },
+    style: {
+      fill: TITLE_COLOR,
+      fontFamily: 'Arial',
+      fontSize: 40,
+      fontWeight: '700',
+    },
   });
   private readonly result = new Text({
     text: 'SCORE 0 · 0.0s',
-    style: { fill: ACCENT_COLOR, fontFamily: 'Arial', fontSize: 20, fontWeight: '600' },
+    style: {
+      fill: ACCENT_COLOR,
+      fontFamily: 'Arial',
+      fontSize: 20,
+      fontWeight: '600',
+    },
   });
   private readonly best = new Text({
     text: 'BEST 0',
-    style: { fill: MUTED_COLOR, fontFamily: 'Arial', fontSize: 17, fontWeight: '500' },
+    style: {
+      fill: MUTED_COLOR,
+      fontFamily: 'Arial',
+      fontSize: 17,
+      fontWeight: '500',
+    },
   });
   private readonly hint = new Text({
-    text: 'PLAY AGAIN · Tap / Space',
-    style: { fill: MUTED_COLOR, fontFamily: 'Arial', fontSize: 16, fontWeight: '500' },
+    text: 'PLAY AGAIN · Tap / Click / Space',
+    style: {
+      fill: MUTED_COLOR,
+      fontFamily: 'Arial',
+      fontSize: 16,
+      fontWeight: '500',
+    },
   });
 
   public constructor() {
@@ -47,19 +68,32 @@ export class GameOverOverlay {
   }
 
   public resize(width: number, height: number): void {
-    const base = Math.min(width, height);
-    const centerX = width * 0.5;
-    const centerY = height * 0.5;
+    const viewport = getResponsiveViewportMetrics(width, height);
+    const base = viewport.visualBase;
+    const centerX = viewport.centerX;
+    const centerY = viewport.centerY;
 
     this.dimmer
       .clear()
-      .rect(0, 0, width, height)
+      .rect(0, 0, viewport.width, viewport.height)
       .fill({ color: OVERLAY_COLOR, alpha: OVERLAY_ALPHA });
 
-    this.title.style.fontSize = Math.max(30, base * 0.065);
-    this.result.style.fontSize = Math.max(17, base * 0.03);
-    this.best.style.fontSize = Math.max(15, base * 0.025);
-    this.hint.style.fontSize = Math.max(14, base * 0.022);
+    this.title.style.fontSize = Math.min(
+      56,
+      Math.max(30, base * 0.065),
+    );
+    this.result.style.fontSize = Math.min(
+      26,
+      Math.max(17, base * 0.03),
+    );
+    this.best.style.fontSize = Math.min(
+      21,
+      Math.max(15, base * 0.025),
+    );
+    this.hint.style.fontSize = Math.min(
+      19,
+      Math.max(14, base * 0.022),
+    );
 
     this.title.position.set(centerX, centerY - base * 0.09);
     this.result.position.set(centerX, centerY - base * 0.005);

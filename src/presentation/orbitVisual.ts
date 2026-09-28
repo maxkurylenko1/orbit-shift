@@ -1,3 +1,5 @@
+import { clampVisualBase } from '../config/responsiveLayout';
+
 export interface OrbitVisualMetrics {
   innerRadius: number;
   outerRadius: number;
@@ -11,7 +13,7 @@ export interface OrbitVisualMetrics {
 }
 
 export const getOrbitVisuals = (base: number): OrbitVisualMetrics => {
-  const safeBase = Math.max(0, base);
+  const safeBase = clampVisualBase(base);
   const coreWidth = Math.max(1.2, safeBase * 0.0022);
 
   return {

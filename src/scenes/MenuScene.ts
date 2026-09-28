@@ -1,4 +1,5 @@
 import { Container, Graphics, Text } from 'pixi.js';
+import { getResponsiveViewportMetrics } from '../config/responsiveLayout';
 import type { InputManager } from '../core/InputManager';
 import type { Scene } from '../core/SceneManager';
 
@@ -31,7 +32,7 @@ export class MenuScene implements Scene {
     },
   });
   private readonly hint = new Text({
-    text: 'Tap to switch orbit',
+    text: 'Tap / Click / Space to shift orbit',
     style: {
       fill: MUTED_COLOR,
       fontFamily: 'Arial',
@@ -59,12 +60,32 @@ export class MenuScene implements Scene {
   public update(_deltaSeconds: number): void {}
 
   public resize(width: number, height: number): void {
-    const base = Math.min(width, height);
-    const buttonWidth = Math.max(180, base * 0.34);
-    const buttonHeight = Math.max(54, base * 0.09);
+    const viewport = getResponsiveViewportMetrics(width, height);
+    const base = viewport.visualBase;
+    const buttonWidth = Math.min(
+      320,
+      Math.max(180, base * 0.34),
+    );
+    const buttonHeight = Math.min(
+      72,
+      Math.max(54, base * 0.09),
+    );
     const buttonRadius = buttonHeight * 0.5;
-    const centerX = width * 0.5;
-    const centerY = height * 0.5;
+    const centerX = viewport.centerX;
+    const centerY = viewport.centerY;
+
+    this.title.style.fontSize = Math.min(
+      58,
+      Math.max(38, base * 0.06),
+    );
+    this.playText.style.fontSize = Math.min(
+      24,
+      Math.max(19, base * 0.03),
+    );
+    this.hint.style.fontSize = Math.min(
+      18,
+      Math.max(14, base * 0.02),
+    );
 
     this.title.position.set(centerX, centerY - base * 0.16);
 
@@ -78,7 +99,11 @@ export class MenuScene implements Scene {
         buttonRadius,
       )
       .fill({ color: ACCENT_COLOR, alpha: 0.16 })
-      .stroke({ color: ACCENT_COLOR, alpha: 0.85, width: Math.max(2, base * 0.003) });
+      .stroke({
+        color: ACCENT_COLOR,
+        alpha: 0.85,
+        width: Math.max(2, base * 0.003),
+      });
 
     this.playText.position.set(centerX, centerY);
     this.hint.position.set(centerX, centerY + base * 0.11);
