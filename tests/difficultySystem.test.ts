@@ -48,11 +48,9 @@ test('endgame reaches a substantially harder cap', () => {
   assert.equal(difficulty.intensity, 0.92);
 });
 
-test('surges temporarily add pressure without changing the base curve forever', () => {
-  const base = new DifficultySystem();
+test('surges temporarily add a short pressure spike', () => {
   const surge = new DifficultySystem();
 
-  base.update(54);
   surge.update(38.6);
 
   assert.ok(surge.surgeStrength > 0.9);

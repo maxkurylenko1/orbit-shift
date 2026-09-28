@@ -19,7 +19,6 @@ export class GameAudio {
   private ambientHarmonic: OscillatorNode | null = null;
   private ambientPulse: OscillatorNode | null = null;
   private ambientPulseDepth: GainNode | null = null;
-  private ambientDrift: OscillatorNode | null = null;
   private ambientDriftDepth: GainNode | null = null;
   private ambientOscillators: OscillatorNode[] = [];
   private muted = false;
@@ -117,7 +116,6 @@ export class GameAudio {
     this.ambientHarmonic = harmonic;
     this.ambientPulse = pulse;
     this.ambientPulseDepth = pulseDepth;
-    this.ambientDrift = drift;
     this.ambientDriftDepth = driftDepth;
     this.ambientOscillators = [base, harmonic, pulse, drift];
     this.lastAmbientIntensity = 0;
@@ -217,7 +215,6 @@ export class GameAudio {
     this.ambientHarmonic = null;
     this.ambientPulse = null;
     this.ambientPulseDepth = null;
-    this.ambientDrift = null;
     this.ambientDriftDepth = null;
     this.lastAmbientIntensity = -1;
     this.lastAmbientSurge = -1;
