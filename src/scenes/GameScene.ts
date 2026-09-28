@@ -1,4 +1,5 @@
 import { Container, Graphics, Text } from 'pixi.js';
+import type { GameAudio } from '../audio/GameAudio';
 import { SpaceBackground } from '../background/SpaceBackground';
 import { calculateVisualSizes } from '../config/visualSizing';
 import type { InputManager } from '../core/InputManager';
@@ -117,9 +118,12 @@ export class GameScene implements Scene {
   private nextCollectibleLane: OrbitLane = 'outer';
   private bestScore = 0;
   private gameOverDelayRemaining = 0;
+  private lastCountdownLabel = '';
   private unsubscribeInput: (() => void) | null = null;
 
   private readonly handleAction = (): void => {
+    this.audio.unlock();
+
     if (this.player.alive) {
       if (!this.countdownSystem.finished) {
         return;
@@ -127,6 +131,7 @@ export class GameScene implements Scene {
 
       if (this.player.switchLane()) {
         this.reactorVisual.pulse(0.24);
+        this.audio.playSwitch();
       }
       return;
     }
@@ -138,7 +143,10 @@ export class GameScene implements Scene {
     this.restartRun();
   };
 
-  public constructor(private readonly input: InputManager) {
+  public constructor(
+    private readonly input: InputManager,
+    private readonly audio: GameAudio,
+  ) {
     this.comboText.anchor.set(0.5, 0);
     this.timeText.anchor.set(1, 0);
     this.countdownText.anchor.set(0.5);
@@ -165,6 +173,7 @@ export class GameScene implements Scene {
 
   public start(): void {
     this.bestScore = this.bestScoreStore.load();
+    this.audio.startAmbient();
     this.restartRun();
     this.unsubscribeInput = this.input.subscribe(this.handleAction);
   }
@@ -196,6 +205,12 @@ export class GameScene implements Scene {
 
     if (!this.countdownSystem.finished) {
       this.countdownSystem.update(deltaSeconds);
+
+      if (this.countdownSystem.label !== this.lastCountdownLabel) {
+        this.lastCountdownLabel = this.countdownSystem.label;
+        this.audio.playCountdown(this.lastCountdownLabel);
+      }
+
       this.countdownText.text = this.countdownSystem.label;
       this.countdownText.visible = !this.countdownSystem.finished;
       return;
@@ -225,6 +240,7 @@ export class GameScene implements Scene {
         base,
       );
       this.reactorVisual.pulse(1);
+      this.audio.playCollision();
       this.updateHud();
       return;
     }
@@ -345,6 +361,7 @@ export class GameScene implements Scene {
     this.clearObstacles();
     this.clearCollectibles();
     this.feedbackView.clear();
+    this.audio.stopAmbient();
     this.view.destroy({ children: true });
   }
 
@@ -356,6 +373,8 @@ export class GameScene implements Scene {
     this.comboSystem.resetChain();
     this.countdownSystem.reset();
     this.difficultySystem.reset();
+    this.lastCountdownLabel = this.countdownSystem.label;
+    this.audio.playCountdown(this.lastCountdownLabel);
     this.collectibleSpawnElapsed = 0;
     this.nextCollectibleLane = 'outer';
     this.gameOverDelayRemaining = 0;
@@ -427,6 +446,7 @@ export class GameScene implements Scene {
     this.feedbackView.triggerShardPickup(pickupX, pickupY, base);
     this.reactorVisual.pulse(0.65);
     this.comboSystem.recordCollect();
+    this.audio.playPickup(this.comboSystem.multiplier);
     this.scoreSystem.addPoints(
       COLLECTIBLE_SCORE_BONUS * this.comboSystem.multiplier,
     );

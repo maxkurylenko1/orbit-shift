@@ -1,4 +1,5 @@
 import { Application, Assets, type Ticker } from 'pixi.js';
+import { GameAudio } from '../audio/GameAudio';
 import { BootScene } from '../scenes/BootScene';
 import { GameScene } from '../scenes/GameScene';
 import { MenuScene } from '../scenes/MenuScene';
@@ -17,6 +18,7 @@ const VISUAL_ASSETS = [
 
 export class Game {
   private readonly app = new Application();
+  private readonly audio = new GameAudio();
   private sceneManager: SceneManager | null = null;
   private inputManager: InputManager | null = null;
 
@@ -58,8 +60,9 @@ export class Game {
         return;
       }
 
+      this.audio.unlock();
       this.sceneManager?.changeScene(
-        new GameScene(this.inputManager),
+        new GameScene(this.inputManager, this.audio),
         this.app.screen.width,
         this.app.screen.height,
       );
@@ -91,6 +94,7 @@ export class Game {
     this.sceneManager = null;
     this.inputManager?.destroy();
     this.inputManager = null;
+    this.audio.destroy();
     this.app.destroy({ removeView: true }, { children: true });
   }
 }
