@@ -6,6 +6,7 @@ import type { Scene } from '../core/SceneManager';
 import { Collectible } from '../entities/Collectible';
 import { Obstacle } from '../entities/Obstacle';
 import { Player, type OrbitLane } from '../entities/Player';
+import { GameFeedbackView } from '../presentation/GameFeedbackView';
 import { getHudVisualMetrics, snapHudCoordinate } from '../presentation/hudVisual';
 import { getOrbitVisuals } from '../presentation/orbitVisual';
 import { ReactorAssetView } from '../presentation/ReactorAssetView';
@@ -33,12 +34,15 @@ const MIN_HUD_PADDING = 16;
 const COLLECTIBLE_SPAWN_INTERVAL_SECONDS = 6;
 const COLLECTIBLE_LEAD_ANGLE = 1.35;
 const COLLECTIBLE_SCORE_BONUS = 50;
+const GAME_OVER_REVEAL_DELAY_SECONDS = 0.22;
 const TAU = Math.PI * 2;
 
 export class GameScene implements Scene {
   public readonly view = new Container();
 
   private readonly spaceBackground = new SpaceBackground();
+  private readonly gameplayLayer = new Container();
+  private readonly feedbackView = new GameFeedbackView();
   private readonly reactorVisual = new ReactorAssetView();
   private readonly orbits = new Graphics();
   private readonly obstacleLayer = new Container();
@@ -112,6 +116,7 @@ export class GameScene implements Scene {
   private collectibleSpawnElapsed = 0;
   private nextCollectibleLane: OrbitLane = 'outer';
   private bestScore = 0;
+  private gameOverDelayRemaining = 0;
   private unsubscribeInput: (() => void) | null = null;
 
   private readonly handleAction = (): void => {
@@ -120,7 +125,13 @@ export class GameScene implements Scene {
         return;
       }
 
-      this.player.switchLane();
+      if (this.player.switchLane()) {
+        this.reactorVisual.pulse(0.24);
+      }
+      return;
+    }
+
+    if (this.gameOverDelayRemaining > 0) {
       return;
     }
 
@@ -131,14 +142,18 @@ export class GameScene implements Scene {
     this.comboText.anchor.set(0.5, 0);
     this.timeText.anchor.set(1, 0);
     this.countdownText.anchor.set(0.5);
-    this.view.addChild(
-      this.spaceBackground.view,
+    this.gameplayLayer.addChild(
       this.reactorVisual.view,
       this.orbits,
       this.player.trailView,
       this.obstacleLayer,
       this.collectibleLayer,
       this.player.view,
+    );
+    this.view.addChild(
+      this.spaceBackground.view,
+      this.gameplayLayer,
+      this.feedbackView.view,
       this.scoreText,
       this.bestText,
       this.comboText,
@@ -155,9 +170,27 @@ export class GameScene implements Scene {
   }
 
   public update(deltaSeconds: number): void {
+    this.feedbackView.update(deltaSeconds);
+    const shake = this.feedbackView.getShakeOffset();
+    this.gameplayLayer.position.set(shake.x, shake.y);
     this.reactorVisual.update(deltaSeconds);
 
     if (!this.player.alive) {
+      if (this.gameOverDelayRemaining > 0) {
+        this.gameOverDelayRemaining = Math.max(
+          0,
+          this.gameOverDelayRemaining - Math.max(0, deltaSeconds),
+        );
+
+        if (this.gameOverDelayRemaining === 0) {
+          this.gameOverOverlay.show(
+            this.scoreSystem.score,
+            this.bestScore,
+            this.scoreSystem.elapsedSeconds,
+          );
+        }
+      }
+
       return;
     }
 
@@ -183,12 +216,16 @@ export class GameScene implements Scene {
     if (this.collisionSystem.hasPlayerCollision(this.player, this.obstacles)) {
       this.player.alive = false;
       this.bestScore = this.bestScoreStore.submit(this.scoreSystem.score);
-      this.updateHud();
-      this.gameOverOverlay.show(
-        this.scoreSystem.score,
-        this.bestScore,
-        this.scoreSystem.elapsedSeconds,
+      this.gameOverDelayRemaining = GAME_OVER_REVEAL_DELAY_SECONDS;
+
+      const base = Math.min(this.viewportWidth, this.viewportHeight);
+      this.feedbackView.triggerCollision(
+        this.player.view.x,
+        this.player.view.y,
+        base,
       );
+      this.reactorVisual.pulse(1);
+      this.updateHud();
       return;
     }
 
@@ -217,6 +254,8 @@ export class GameScene implements Scene {
     this.outerRadius = outerRadius;
 
     this.spaceBackground.resize(width, height);
+    this.feedbackView.resize(width, height);
+    this.gameplayLayer.position.set(0);
     this.reactorVisual.view.position.set(centerX, centerY);
     this.reactorVisual.resize(reactorSize);
 
@@ -305,6 +344,7 @@ export class GameScene implements Scene {
     this.unsubscribeInput = null;
     this.clearObstacles();
     this.clearCollectibles();
+    this.feedbackView.clear();
     this.view.destroy({ children: true });
   }
 
@@ -318,6 +358,10 @@ export class GameScene implements Scene {
     this.difficultySystem.reset();
     this.collectibleSpawnElapsed = 0;
     this.nextCollectibleLane = 'outer';
+    this.gameOverDelayRemaining = 0;
+    this.feedbackView.clear();
+    this.reactorVisual.resetFeedback();
+    this.gameplayLayer.position.set(0);
     this.player.reset();
     this.player.angularSpeed = this.difficultySystem.playerAngularSpeed;
     this.countdownText.text = this.countdownSystem.label;
@@ -374,9 +418,14 @@ export class GameScene implements Scene {
     }
 
     const [collectible] = this.collectibles.splice(index, 1);
+    const pickupX = collectible.view.x;
+    const pickupY = collectible.view.y;
     this.collectibleLayer.removeChild(collectible.view);
     collectible.destroy();
 
+    const base = Math.min(this.viewportWidth, this.viewportHeight);
+    this.feedbackView.triggerShardPickup(pickupX, pickupY, base);
+    this.reactorVisual.pulse(0.65);
     this.comboSystem.recordCollect();
     this.scoreSystem.addPoints(
       COLLECTIBLE_SCORE_BONUS * this.comboSystem.multiplier,

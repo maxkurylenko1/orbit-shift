@@ -1,5 +1,6 @@
-import { Graphics, Sprite } from 'pixi.js';
+import { Container, Graphics, Sprite } from 'pixi.js';
 import { calculateVisualSizes } from '../config/visualSizing';
+import { getLaneSwitchVisual } from '../presentation/gameFeelVisual';
 import {
   getPlayerPresentationMetrics,
   PLAYER_TRAIL_POINT_COUNT,
@@ -20,7 +21,7 @@ const easeInOutQuad = (t: number): number =>
 
 export class Player {
   public readonly trailView = new Graphics();
-  public readonly view = Sprite.from(PLAYER_ASSET_URL);
+  public readonly view = new Container();
 
   public lane: OrbitLane = INITIAL_LANE;
   public angle = INITIAL_ANGLE;
@@ -30,6 +31,8 @@ export class Player {
   public transitionToLane: OrbitLane = INITIAL_LANE;
   public transitionProgress = 1;
 
+  private readonly motionView = new Container();
+  private readonly sprite = Sprite.from(PLAYER_ASSET_URL);
   private centerX = 0;
   private centerY = 0;
   private innerRadius = 0;
@@ -39,13 +42,17 @@ export class Player {
   private trailHeadAlpha = 0.48;
   private glowRadius = 18;
   private glowAlpha = 0.11;
+  private trailBoost = 1;
+  private glowBoost = 1;
   private trailCount = 0;
   private trailHead = 0;
   private readonly trailX = new Float32Array(PLAYER_TRAIL_POINT_COUNT);
   private readonly trailY = new Float32Array(PLAYER_TRAIL_POINT_COUNT);
 
   public constructor() {
-    this.view.anchor.set(0.5);
+    this.sprite.anchor.set(0.5);
+    this.motionView.addChild(this.sprite);
+    this.view.addChild(this.motionView);
   }
 
   public update(deltaSeconds: number): void {
@@ -76,14 +83,16 @@ export class Player {
     this.redrawTrail();
   }
 
-  public switchLane(): void {
+  public switchLane(): boolean {
     if (!this.alive || this.transitionProgress < 1) {
-      return;
+      return false;
     }
 
     this.transitionFromLane = this.lane;
     this.transitionToLane = this.lane === 'outer' ? 'inner' : 'outer';
     this.transitionProgress = 0;
+
+    return true;
   }
 
   public reset(): void {
@@ -93,6 +102,10 @@ export class Player {
     this.transitionFromLane = INITIAL_LANE;
     this.transitionToLane = INITIAL_LANE;
     this.transitionProgress = 1;
+    this.trailBoost = 1;
+    this.glowBoost = 1;
+    this.motionView.scale.set(1);
+    this.motionView.rotation = 0;
     this.clearTrail();
     this.updatePosition();
     this.redrawTrail();
@@ -117,8 +130,9 @@ export class Player {
     this.trailHeadAlpha = presentation.trailHeadAlpha;
     this.glowRadius = presentation.glowRadius;
     this.glowAlpha = presentation.glowAlpha;
-    this.view.width = visualSize;
-    this.view.height = visualSize;
+    this.sprite.width = visualSize;
+    this.sprite.height = visualSize;
+    this.motionView.scale.set(1);
     this.clearTrail();
     this.updatePosition();
     this.redrawTrail();
@@ -129,12 +143,21 @@ export class Player {
     const toRadius = this.getLaneRadius(this.transitionToLane);
     const easedProgress = easeInOutQuad(this.transitionProgress);
     const radius = fromRadius + (toRadius - fromRadius) * easedProgress;
+    const switchDirection = this.transitionToLane === 'inner' ? -1 : 1;
+    const switchVisual = getLaneSwitchVisual(
+      this.transitionProgress,
+      switchDirection,
+    );
 
     this.view.position.set(
       this.centerX + Math.cos(this.angle) * radius,
       this.centerY + Math.sin(this.angle) * radius,
     );
     this.view.rotation = calculatePlayerVisualRotation(this.angle);
+    this.motionView.rotation = switchVisual.rotationOffset;
+    this.motionView.scale.set(switchVisual.scaleX, switchVisual.scaleY);
+    this.trailBoost = switchVisual.trailBoost;
+    this.glowBoost = switchVisual.glowBoost;
   }
 
   private recordTrailPoint(): void {
@@ -150,13 +173,24 @@ export class Player {
   private redrawTrail(): void {
     this.trailView.clear();
 
+    const boostedGlowRadius = this.glowRadius * this.glowBoost;
+
     this.trailView
-      .circle(this.view.x, this.view.y, this.glowRadius)
-      .fill({ color: TRAIL_COLOR, alpha: this.glowAlpha * 0.12 })
-      .circle(this.view.x, this.view.y, this.glowRadius * 0.64)
-      .fill({ color: TRAIL_COLOR, alpha: this.glowAlpha * 0.22 })
-      .circle(this.view.x, this.view.y, this.glowRadius * 0.34)
-      .fill({ color: TRAIL_COLOR, alpha: this.glowAlpha * 0.38 });
+      .circle(this.view.x, this.view.y, boostedGlowRadius)
+      .fill({
+        color: TRAIL_COLOR,
+        alpha: this.glowAlpha * 0.12 * this.glowBoost,
+      })
+      .circle(this.view.x, this.view.y, boostedGlowRadius * 0.64)
+      .fill({
+        color: TRAIL_COLOR,
+        alpha: this.glowAlpha * 0.22 * this.glowBoost,
+      })
+      .circle(this.view.x, this.view.y, boostedGlowRadius * 0.34)
+      .fill({
+        color: TRAIL_COLOR,
+        alpha: this.glowAlpha * 0.38 * this.glowBoost,
+      });
 
     if (this.trailCount < 2) {
       return;
@@ -180,8 +214,11 @@ export class Player {
         .lineTo(this.trailX[currentIndex], this.trailY[currentIndex])
         .stroke({
           color: TRAIL_COLOR,
-          alpha,
-          width: this.trailWidth * (0.35 + progress * 0.65),
+          alpha: Math.min(0.72, alpha * this.trailBoost),
+          width:
+            this.trailWidth *
+            (0.35 + progress * 0.65) *
+            (0.88 + this.trailBoost * 0.12),
         });
     }
   }

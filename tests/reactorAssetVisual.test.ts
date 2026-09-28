@@ -19,3 +19,13 @@ test('reactor delegates soft halo rendering to the authored asset', () => {
     assert.ok(pulse <= 1.025);
   }
 });
+
+test('reactor feedback pulse adds a restrained gameplay impulse', () => {
+  const idle = calculateReactorAssetPulse(0, 0.015, 0);
+  const pickup = calculateReactorAssetPulse(0, 0.015, 0.65);
+  const impact = calculateReactorAssetPulse(0, 0.015, 1);
+
+  assert.ok(pickup > idle);
+  assert.ok(impact > pickup);
+  assert.ok(impact <= 1.04);
+});
