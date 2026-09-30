@@ -5,6 +5,7 @@ import { chromium } from 'playwright';
 const TARGETS = [
   { name: 'phone-small', width: 375, height: 667, mobile: true },
   { name: 'phone-modern', width: 390, height: 844, mobile: true },
+  { name: 'phone-landscape', width: 844, height: 390, mobile: true },
   { name: 'laptop', width: 1366, height: 768, mobile: false },
   { name: 'desktop', width: 1920, height: 1080, mobile: false },
   { name: 'ultrawide', width: 3440, height: 1440, mobile: false },
@@ -62,6 +63,11 @@ try {
     });
 
     assert.ok(
+      Math.abs(size.viewportWidth - target.width) < 2 &&
+        Math.abs(size.viewportHeight - target.height) < 2,
+      `${target.name}: emulated browser viewport mismatch: ${JSON.stringify(size)}`,
+    );
+    assert.ok(
       Math.abs(size.width - size.viewportWidth) < 2,
       `${target.name}: canvas width does not fit viewport: ${JSON.stringify(size)}`,
     );
@@ -110,15 +116,40 @@ try {
       await page.setViewportSize({ width: 844, height: 390 });
       await page.waitForTimeout(250);
 
-      const rotated = await canvas.boundingBox();
-      assert.ok(
-        rotated &&
+      const rotated = await page.evaluate(() => {
+        const rect = document
+          .querySelector('canvas.game-canvas')
+          .getBoundingClientRect();
+
+        return {
+          width: rect.width,
+          height: rect.height,
+          innerWidth: window.innerWidth,
+          innerHeight: window.innerHeight,
+          screenWidth: window.screen.width,
+          screenHeight: window.screen.height,
+          visualWidth: window.visualViewport?.width,
+          visualHeight: window.visualViewport?.height,
+        };
+      });
+
+      console.log('In-place mobile rotation:', JSON.stringify(rotated));
+
+      if (rotated.innerWidth === 844 && rotated.innerHeight === 390) {
+        assert.ok(
           Math.abs(rotated.width - 844) < 2 &&
-          Math.abs(rotated.height - 390) < 2,
-        'phone landscape canvas must fill the new viewport',
-      );
+            Math.abs(rotated.height - 390) < 2,
+          'canvas did not follow an actual viewport resize',
+        );
+      } else {
+        console.log(
+          'The emulated device screen did not rotate in place; ' +
+            'the dedicated phone-landscape context checks true landscape rendering.',
+        );
+      }
+
       await page.screenshot({
-        path: `${screenshotDir}/phone-landscape.png`,
+        path: `${screenshotDir}/phone-landscape-resize.png`,
       });
     }
 
