@@ -20,15 +20,29 @@ const VISUAL_ASSETS = [
 export class Game {
   private readonly app = new Application();
   private readonly audio = new GameAudio();
+  private host: HTMLElement | null = null;
   private sceneManager: SceneManager | null = null;
   private inputManager: InputManager | null = null;
   private audioToggle: AudioToggle | null = null;
 
   private readonly handleResize = (): void => {
-    if (!this.sceneManager) {
+    if (!this.sceneManager || !this.host) {
       return;
     }
 
+    // 100vw/100dvh can lag behind visualViewport during mobile rotation.
+    // Give Pixi's resizeTo element explicit CSS-pixel dimensions first.
+    const width = Math.max(
+      1,
+      Math.round(window.visualViewport?.width ?? window.innerWidth),
+    );
+    const height = Math.max(
+      1,
+      Math.round(window.visualViewport?.height ?? window.innerHeight),
+    );
+
+    this.host.style.width = `${width}px`;
+    this.host.style.height = `${height}px`;
     this.app.resize();
     this.sceneManager.resize(this.app.screen.width, this.app.screen.height);
   };
@@ -38,6 +52,8 @@ export class Game {
   };
 
   public async init(host: HTMLElement): Promise<void> {
+    this.host = host;
+
     await this.app.init({
       antialias: true,
       autoDensity: true,
@@ -94,6 +110,7 @@ export class Game {
       this.app.screen.width,
       this.app.screen.height,
     );
+    this.handleResize();
   }
 
   public destroy(): void {
@@ -108,5 +125,11 @@ export class Game {
     this.audioToggle = null;
     this.audio.destroy();
     this.app.destroy({ removeView: true }, { children: true });
+
+    if (this.host) {
+      this.host.style.width = '';
+      this.host.style.height = '';
+      this.host = null;
+    }
   }
 }
