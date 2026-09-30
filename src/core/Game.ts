@@ -21,6 +21,8 @@ export class Game {
   private readonly app = new Application();
   private readonly audio = new GameAudio();
   private host: HTMLElement | null = null;
+  private viewportWidth = 0;
+  private viewportHeight = 0;
   private sceneManager: SceneManager | null = null;
   private inputManager: InputManager | null = null;
   private audioToggle: AudioToggle | null = null;
@@ -43,11 +45,31 @@ export class Game {
 
     this.host.style.width = `${width}px`;
     this.host.style.height = `${height}px`;
+    this.viewportWidth = width;
+    this.viewportHeight = height;
     this.app.resize();
     this.sceneManager.resize(this.app.screen.width, this.app.screen.height);
   };
 
   private readonly handleTick = (ticker: Ticker): void => {
+    // Some mobile browsers (and viewport emulators) update visualViewport
+    // without dispatching resize events. Detect that inexpensive state change.
+    if (this.sceneManager && this.host) {
+      const viewport = window.visualViewport;
+      const width = Math.max(
+        1,
+        Math.round(viewport?.width ?? window.innerWidth),
+      );
+      const height = Math.max(
+        1,
+        Math.round(viewport?.height ?? window.innerHeight),
+      );
+
+      if (width !== this.viewportWidth || height !== this.viewportHeight) {
+        this.handleResize();
+      }
+    }
+
     this.sceneManager?.update(ticker.deltaMS / 1000);
   };
 

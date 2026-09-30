@@ -114,7 +114,15 @@ try {
 
     if (target.name === 'phone-modern') {
       await page.setViewportSize({ width: 844, height: 390 });
-      await page.waitForTimeout(250);
+      await page.waitForFunction(() => {
+        const canvasElement = document.querySelector('canvas.game-canvas');
+        if (!canvasElement) return false;
+        const rect = canvasElement.getBoundingClientRect();
+        return (
+          Math.abs(rect.width - window.innerWidth) < 2 &&
+          Math.abs(rect.height - window.innerHeight) < 2
+        );
+      }, undefined, { timeout: 15_000 });
 
       const rotated = await page.evaluate(() => {
         const rect = document
@@ -130,6 +138,10 @@ try {
           screenHeight: window.screen.height,
           visualWidth: window.visualViewport?.width,
           visualHeight: window.visualViewport?.height,
+          hostWidth: document.querySelector('#app')?.getBoundingClientRect().width,
+          hostHeight: document.querySelector('#app')?.getBoundingClientRect().height,
+          hostInlineWidth: document.querySelector('#app')?.style.width,
+          hostInlineHeight: document.querySelector('#app')?.style.height,
         };
       });
 
