@@ -5,9 +5,9 @@ import test from 'node:test';
 
 const approvedAssets = {
   'space-background.webp': '9c96bdbba81444760ec13ddc3e3fdc1a9341dbcc',
-  'reactor.webp': 'd358247bfb4dc631fbcd8b3e6a775512497a23e1',
+  'reactor.webp': '01a64790aa159141f148a8ea37c7af78ee2ddd68',
   'player-simple.webp': '07623830073623ac4b944f87f0772f525da115fd',
-  'obstacle.webp': '506bc4c919e59e6aa14f75c00ac177cfaebcef0f',
+  'obstacle.webp': '43cbec3f81692ef24fc3b28f13bfcdbb4b54dc44',
   'shard.webp': '702e56e667622e8b590dab54a45455f7031a9f73',
 } as const;
 
