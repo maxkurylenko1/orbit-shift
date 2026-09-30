@@ -1,9 +1,9 @@
 import { clampVisualBase } from '../config/responsiveLayout';
 
-const OBSTACLE_SIZE_RATIO = 0.052;
-const SHARD_SIZE_RATIO = 0.041;
-const MIN_OBSTACLE_SIZE = 22;
-const MIN_SHARD_SIZE = 18;
+const OBSTACLE_SIZE_RATIO = 0.058;
+const SHARD_SIZE_RATIO = 0.044;
+const MIN_OBSTACLE_SIZE = 24;
+const MIN_SHARD_SIZE = 20;
 
 export interface GameItemVisuals {
   obstacle: number;

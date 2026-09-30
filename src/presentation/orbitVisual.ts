@@ -25,6 +25,6 @@ export const getOrbitVisuals = (base: number): OrbitVisualMetrics => {
     decorativeWidth: Math.max(1, safeBase * 0.0014),
     innerAlpha: 0.86,
     outerAlpha: 0.72,
-    decorativeAlpha: 0.13,
+    decorativeAlpha: 0.055,
   };
 };

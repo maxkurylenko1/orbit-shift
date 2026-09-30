@@ -363,7 +363,7 @@ export class GameScene implements Scene {
           centerY + Math.sin(angle) * orbitVisuals.decorativeRadius,
           markerRadius,
         )
-        .fill({ color: ORBIT_CORE_COLOR, alpha: 0.22 });
+        .fill({ color: ORBIT_CORE_COLOR, alpha: 0.11 });
     }
 
     this.player.resize(width, height, innerRadius, outerRadius);

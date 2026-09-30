@@ -9,7 +9,7 @@ test('decorative ring sits outside enlarged gameplay orbits', () => {
   assert.equal(visuals.outerRadius, 325);
   assert.equal(visuals.decorativeRadius, 380);
   assert.ok(visuals.decorativeRadius > visuals.outerRadius);
-  assert.ok(visuals.decorativeAlpha < 0.2);
+  assert.ok(visuals.decorativeAlpha < 0.08);
   assert.ok(visuals.gameplayGlowWidth > visuals.gameplayCoreWidth);
 });
 

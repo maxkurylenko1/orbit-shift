@@ -17,7 +17,7 @@ const PANEL_COLOR = 0x07101d;
 export class MenuScene implements Scene {
   public readonly view = new Container();
 
-  private readonly spaceBackground = new SpaceBackground();
+  private readonly spaceBackground = new SpaceBackground('menu');
   private readonly reactor = new ReactorAssetView();
   private readonly orbitDecoration = new Graphics();
   private readonly panel = new Graphics();
