@@ -87,11 +87,21 @@ export const SPAWN_PATTERN_COUNT = PATTERNS.length;
 const clampTier = (tier: number): number =>
   Math.max(0, Math.min(4, Math.floor(tier)));
 
+// Late runs rotate through challenging sequences instead of resetting
+// to full tutorial patterns. Advanced patterns include their own rest beats.
+const PATTERN_ROTATIONS: readonly (readonly number[])[] = [
+  [0, 1],
+  [0, 2, 1],
+  [0, 2, 3],
+  [2, 3, 4],
+  [3, 4, 5, 6],
+];
+
 const getEligiblePatternIndices = (tier: number): number[] => {
   const safeTier = clampTier(tier);
 
-  return PATTERNS.flatMap((pattern, index) =>
-    pattern.minTier <= safeTier ? [index] : [],
+  return PATTERN_ROTATIONS[safeTier].filter(
+    (index) => PATTERNS[index].minTier <= safeTier,
   );
 };
 

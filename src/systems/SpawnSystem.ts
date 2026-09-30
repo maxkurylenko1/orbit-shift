@@ -5,6 +5,7 @@ import { SPAWN_PATTERN_COUNT, SpawnPatternSystem } from './SpawnPatternSystem';
 
 const SPAWN_LEAD_ANGLE = 2.25;
 const MIN_INTERVAL_SECONDS = 0.1;
+const MAX_FRAME_OVERSHOOT_SECONDS = 0.025;
 const TAU = Math.PI * 2;
 
 export type SpawnObstacleHandler = (lane: OrbitLane, angle: number) => void;
@@ -16,8 +17,8 @@ export class SpawnSystem {
 
   public constructor(private readonly onSpawnObstacle: SpawnObstacleHandler) {}
 
-  public reset(): void {
-    const variation = createSpawnRunVariation(SPAWN_PATTERN_COUNT);
+  public reset(random: () => number = Math.random): void {
+    const variation = createSpawnRunVariation(SPAWN_PATTERN_COUNT, random);
 
     this.elapsedSeconds = 0;
     this.runLeadAngle = SPAWN_LEAD_ANGLE + variation.leadAngleOffset;
@@ -51,7 +52,12 @@ export class SpawnSystem {
       return;
     }
 
-    this.elapsedSeconds %= stepInterval;
+    // Discard excessive elapsed time after tab stalls or a dropped frame.
+    // Never spawn a backlog of obstacles in back-to-back frames.
+    this.elapsedSeconds = Math.min(
+      Math.max(0, this.elapsedSeconds - stepInterval),
+      MAX_FRAME_OVERSHOOT_SECONDS,
+    );
     this.patternSystem.advance();
 
     if (!step.lane) {

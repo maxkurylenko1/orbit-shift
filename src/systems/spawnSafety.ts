@@ -1,6 +1,7 @@
 const BASE_PLAYER_ANGULAR_SPEED = 1.2;
-const MIN_REACTION_SECONDS = 0.54;
-const SPEED_REACTION_BUFFER_PER_RADIAN = 0.07;
+// Minimum gap between obstacles; lead angle provides additional reaction time.
+const MIN_HAZARD_SPACING_SECONDS = 0.5;
+const SPEED_SPACING_BUFFER_PER_RADIAN = 0.02;
 
 export const getSafeSpawnInterval = (
   baseIntervalSeconds: number,
@@ -13,12 +14,12 @@ export const getSafeSpawnInterval = (
     0,
     playerAngularSpeed - BASE_PLAYER_ANGULAR_SPEED,
   );
-  const minimumReactionWindow =
-    MIN_REACTION_SECONDS +
-    speedPressure * SPEED_REACTION_BUFFER_PER_RADIAN;
+  const minimumHazardSpacing =
+    MIN_HAZARD_SPACING_SECONDS +
+    speedPressure * SPEED_SPACING_BUFFER_PER_RADIAN;
 
   return Math.max(
-    minimumReactionWindow,
+    minimumHazardSpacing,
     safeBaseInterval * safeMultiplier,
   );
 };

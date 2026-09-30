@@ -67,6 +67,10 @@ npm run build
 npm run preview
 ```
 
+## Gameplay regression tests
+
+With Node.js 22.16 or newer, run `npm run test:gameplay`. This executes seeded five-minute spawn simulations, checks dual-lane blockade prevention, hazard density, spawn cadence after tab stalls, and the rewards of shard collection. These logic checks complement manual playtesting and do not verify browser rendering or perceived difficulty.
+
 ## Design goals
 
 Orbit Shift is intentionally compact. The project focuses on the areas that matter for a polished HTML5 game portfolio piece:

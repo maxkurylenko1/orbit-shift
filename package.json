@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:gameplay": "node --experimental-strip-types --import ./tests/registerTsLoader.mjs --test tests/spawnSafety.test.ts tests/spawnPatternSystem.test.ts tests/spawnSystem.test.ts tests/gameplaySafety.test.ts tests/difficultySystem.test.ts tests/longRunGameplay.test.ts"
   },
   "dependencies": {
     "pixi.js": "8.20.1"
