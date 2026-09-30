@@ -13,6 +13,7 @@ const TARGETS = [
 
 const baseUrl = process.env.ORBIT_QA_URL ?? 'http://127.0.0.1:4173';
 const screenshotDir = 'qa-screenshots';
+const SCREENSHOT_TARGETS = new Set(['phone-modern', 'desktop']);
 
 await mkdir(screenshotDir, { recursive: true });
 
@@ -108,9 +109,14 @@ try {
     });
     await page.waitForTimeout(300);
 
-    await page.screenshot({
-      path: `${screenshotDir}/${target.name}.png`,
-    });
+    if (SCREENSHOT_TARGETS.has(target.name)) {
+      await page.screenshot({
+        path: `${screenshotDir}/${target.name}.jpg`,
+        type: 'jpeg',
+        quality: 80,
+        timeout: 60_000,
+      });
+    }
 
     if (target.name === 'phone-modern') {
       await page.setViewportSize({ width: 844, height: 390 });
@@ -161,7 +167,10 @@ try {
       }
 
       await page.screenshot({
-        path: `${screenshotDir}/phone-landscape-resize.png`,
+        path: `${screenshotDir}/phone-landscape-resize.jpg`,
+        type: 'jpeg',
+        quality: 80,
+        timeout: 60_000,
       });
     }
 
