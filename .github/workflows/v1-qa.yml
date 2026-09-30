@@ -1,0 +1,44 @@
+name: Orbit Shift v1 QA
+on:
+  push:
+    branches:
+      - chore/v1-technical-qa
+      - main
+  workflow_dispatch:
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: TypeScript typecheck
+        run: npm run typecheck
+      - name: Gameplay regression suite
+        run: npm run test:gameplay
+      - name: Full unit suite
+        run: npm run test:all
+      - name: Production build
+        run: npm run build
+      - name: Preview and HTTP smoke test
+        shell: bash
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/orbit-preview.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /tmp/orbit-home.html; then
+              break
+            fi
+            sleep 1
+          done
+          grep -q 'Orbit Shift' /tmp/orbit-home.html
+          for asset in reactor obstacle shard player-simple space-background; do
+            curl --fail --silent --show-error -o /dev/null "http://127.0.0.1:4173/assets/${asset}.webp"
+          done
+          echo "Preview and all five assets respond over HTTP."
